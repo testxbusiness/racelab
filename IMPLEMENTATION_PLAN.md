@@ -422,24 +422,37 @@ Build the actual primary interface.
 
 ### Components
 
-- [ ] LiveHeader.
-- [ ] ConnectionBadge.
-- [ ] DataAge.
-- [ ] Leaderboard.
-- [ ] LeaderboardRow.
-- [ ] TyreBadge.
-- [ ] RaceStatus.
-- [ ] EventFeed.
+- [x] LiveHeader.
+- [x] ConnectionBadge.
+- [x] DataAge.
+- [x] Leaderboard.
+- [x] LeaderboardRow.
+- [x] TyreBadge.
+- [x] RaceStatus.
+- [x] EventFeed.
 
 ### Acceptance
 
 On iPhone portrait:
 
-- lap visible;
-- status visible;
-- top timing readable;
-- favourite driver can be located quickly;
-- reconnect does not blank page.
+- [x] lap visible;
+- [x] status visible;
+- [x] top timing readable;
+- [ ] favourite driver can be located quickly — deferred to Phase 4 because favourite-driver selection is not implemented yet;
+- [x] reconnect does not blank page.
+
+### Phase 3 implementation notes — 22 Aug 2026
+
+- [x] Added `/radar` as the primary server-rendered Race Radar screen.
+- [x] Added a thin client refresh shell backed by `/api/openf1/live`; it keeps the last valid `LiveRaceState` visible during provider errors, reconnecting, stale data, and offline mode.
+- [x] Extended the domain session model with provider-mapped start/end timestamps and derived race status. The current provider does not expose total race laps, pit state, or retirement in the configured payload set, so the UI renders explicit unavailable markers rather than fabricating values.
+- [x] Added component render tests plus existing composer/provider integration coverage. Validation passed: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
+
+### Phase 3 risks / next action
+
+- OpenF1 live session status and total-lap availability should be verified during the next real-session rehearsal. If exposed, map them into the existing domain rather than changing the UI boundary.
+- Pit/retired flags remain intentionally nullable until a supported provider stream is added; this is acceptable for the “where available” requirement.
+- Next phase: Focus Driver, without adding track map or telemetry to the timing screen.
 
 ---
 

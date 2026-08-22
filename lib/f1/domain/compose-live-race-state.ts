@@ -1,4 +1,4 @@
-import type { LiveDriver, LiveDriverTiming, LiveFreshness, LiveInterval, LiveLap, LivePosition, LiveRaceControlEvent, LiveRaceState, LiveSession, LiveStint, StreamHealth } from "./live";
+import type { LiveDriver, LiveDriverTiming, LiveFreshness, LiveInterval, LiveLap, LivePosition, LiveRaceControlEvent, LiveRaceState, LiveSession, LiveStint, RaceStatus, StreamHealth } from "./live";
 import type { LiveStreamName } from "@/lib/openf1/polling";
 
 const LIVE_MAX_AGE_MS = 8_000;
@@ -33,6 +33,18 @@ function latestStintByDriver(stints: LiveStint[]): Map<number, LiveStint> {
   return output;
 }
 
+function raceStatus(events: LiveRaceControlEvent[], session: LiveSession, now: number): RaceStatus {
+  if (session.dateEnd && Date.parse(session.dateEnd) <= now) return "ended";
+  const latest = [...events].sort((a, b) => b.sourceTimestamp.localeCompare(a.sourceTimestamp))[0];
+  const value = `${latest?.flag ?? ""} ${latest?.message ?? ""}`.toUpperCase();
+  if (value.includes("RED")) return "red-flag";
+  if (value.includes("VIRTUAL SAFETY CAR") || value.includes("VSC")) return "virtual-safety-car";
+  if (value.includes("SAFETY CAR") || value.includes("SC DEPLOYED")) return "safety-car";
+  if (value.includes("YELLOW") || value.includes("DOUBLE YELLOW")) return "yellow";
+  if (value.includes("GREEN") || events.length === 0) return "green";
+  return "unavailable";
+}
+
 export type LiveRaceInputs = {
   session: LiveSession;
   drivers: LiveDriver[];
@@ -57,8 +69,9 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
     const lap = laps.get(driver.number);
     const stint = stints.get(driver.number);
     const tyreAge = stint && lap ? Math.max(stint.tyreAgeAtStart, stint.tyreAgeAtStart + lap.lapNumber - stint.lapStart) : null;
-    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
+    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, inPit: null, retired: null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
   }).sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
   const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
-  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, timing, raceControl: deduplicateRaceControl(input.raceControl), freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt };
+  const events = deduplicateRaceControl(input.raceControl);
+  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: raceStatus(events, input.session, now), timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt };
 }

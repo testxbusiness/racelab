@@ -1,6 +1,7 @@
 import type { LiveStreamName } from "@/lib/openf1/polling";
 
 export type FreshnessStatus = "live" | "delayed" | "stale" | "unavailable";
+export type RaceStatus = "green" | "yellow" | "safety-car" | "virtual-safety-car" | "red-flag" | "ended" | "unavailable";
 
 export type LiveFreshness = {
   sourceTimestamp: string | null;
@@ -16,6 +17,8 @@ export type LiveSession = {
   type: string;
   countryName: string | null;
   circuitName: string | null;
+  dateStart: string | null;
+  dateEnd: string | null;
 };
 
 export type LiveDriver = { number: number; fullName: string; acronym: string; teamName: string | null; teamColour: string | null };
@@ -32,6 +35,8 @@ export type LiveDriverTiming = {
   interval: number | null;
   compound: string | null;
   tyreAge: number | null;
+  inPit: boolean | null;
+  retired: boolean | null;
   sourceTimestamp: string | null;
 };
 
@@ -42,6 +47,8 @@ export type RateBudget = { requestsLast60Seconds: number; maxRequestsPerMinute: 
 export type LiveRaceState = {
   session: LiveSession;
   lapNumber: number | null;
+  totalLaps: number | null;
+  raceStatus: RaceStatus;
   timing: LiveDriverTiming[];
   raceControl: LiveRaceControlEvent[];
   freshness: LiveFreshness;

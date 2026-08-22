@@ -10,7 +10,7 @@ const rateBudget = { requestsLast60Seconds: 6, maxRequestsPerMinute: 60, usageRa
 describe("LiveRaceState composer", () => {
   it("composes timing, latest stint data, and deduplicated race control", () => {
     const state = composeLiveRaceState({
-      session: { key: 1, meetingKey: 2, name: "Race", type: "Race", countryName: "Italy", circuitName: "Monza" },
+      session: { key: 1, meetingKey: 2, name: "Race", type: "Race", countryName: "Italy", circuitName: "Monza", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
       drivers: [{ number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }],
       positions: [{ driverNumber: 16, position: 2, sourceTimestamp: "2026-08-22T14:59:58.000Z" }],
       intervals: [{ driverNumber: 16, interval: 1.2, gapToLeader: 4.1, sourceTimestamp: "2026-08-22T14:59:57.000Z" }],
