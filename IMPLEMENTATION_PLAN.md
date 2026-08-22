@@ -1013,7 +1013,7 @@ Every task must satisfy where applicable:
 - [x] Validate provider payloads with Zod before they enter the provider result.
 - [x] Add `/api/openf1/live` and a server-rendered diagnostic page at `/`.
 - [ ] Configure OpenF1 live credentials in the deployment environment.
-- [ ] Deploy live diagnostics page to Vercel.
+- [x] Deploy live diagnostics page to Vercel: https://racelab-dusky.vercel.app
 - [ ] Push the local source to `testxbusiness/racelab`.
 - [ ] Test on Zandvoort.
 
@@ -1043,5 +1043,7 @@ Do not start Track Map until the live provider proof has succeeded.
 
 - Live OAuth has not been exercised end-to-end here because `OPENF1_USERNAME` and `OPENF1_PASSWORD` are not configured. Credentialed smoke testing is still required during the Zandvoort live window.
 - Vercel is not deployed: the CLI reports `Logged out`, and no deployment token is available. Deployment also requires the two OpenF1 secrets and `OPENF1_DIAGNOSTICS_ENABLED=true` as server environment variables.
-- The public repository `https://github.com/testxbusiness/racelab` now exists but is empty. The GitHub connector reports push permissions but rejects content writes with `403 Resource not accessible by integration`; the local `gh` token is also invalid, and the in-app browser is signed out. Source push remains pending authentication.
+- The public repository `https://github.com/testxbusiness/racelab` was initially empty. The GitHub connector rejected content writes with `403 Resource not accessible by integration`, but CLI authentication later succeeded and the source was pushed.
+- GitHub CLI authentication and push are now complete: commit `4f73c72` is on `main` in `testxbusiness/racelab`.
+- Vercel production deployment is READY at `https://racelab-dusky.vercel.app`; the initial runtime correctly reported diagnostics disabled until `OPENF1_DIAGNOSTICS_ENABLED=true` was added. A redeploy is still required after adding that environment variable, and real live data still requires the two OpenF1 secrets.
 - Track Map, telemetry, PWA refinement, and all post-Monza features remain intentionally untouched.
