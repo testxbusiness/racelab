@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { emptyResultSchema, intervalSchema, lapSchema, positionSchema, raceControlSchema } from "@/lib/openf1/schemas";
-import { openF1Fetch, resetTokenForTests } from "@/lib/openf1/live-client";
+import { emptyResultSchema, intervalSchema, lapSchema, positionSchema, raceControlSchema, stintSchema } from "@/lib/openf1/schemas";
+import { getRateBudgetSnapshot, openF1Fetch, resetTokenForTests } from "@/lib/openf1/live-client";
 
 describe("OpenF1 Phase 1 schemas", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); resetTokenForTests(); });
@@ -17,6 +17,9 @@ describe("OpenF1 Phase 1 schemas", () => {
   it("validates lap data used by the diagnostic summary", () => {
     expect(lapSchema.parse({ date_start: null, date_end: null, session_key: 1, driver_number: 1, lap_number: 7 }).lap_number).toBe(7);
   });
+  it("validates stints used by the live composer", () => {
+    expect(stintSchema.parse({ compound: "MEDIUM", driver_number: 16, lap_end: 20, lap_start: 5, meeting_key: 2, session_key: 1, stint_number: 2, tyre_age_at_start: 3 }).compound).toBe("MEDIUM");
+  });
 
   it("authenticates server-side once and reuses the bearer token", async () => {
     vi.stubEnv("OPENF1_USERNAME", "test-user");
@@ -30,5 +33,6 @@ describe("OpenF1 Phase 1 schemas", () => {
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ headers: expect.any(Headers) });
     const headers = fetchMock.mock.calls[1]?.[1]?.headers;
     expect(new Headers(headers).get("authorization")).toBe("Bearer secret-token");
+    expect(getRateBudgetSnapshot(2).warning).toBe("near_limit");
   });
 });

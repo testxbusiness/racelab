@@ -385,15 +385,15 @@ Convert live spike into maintainable provider layer.
 
 ### Tasks
 
-- [ ] Zod schemas.
-- [ ] provider response mappers.
-- [ ] typed provider errors.
-- [ ] LiveRaceState composer.
-- [ ] event deduplication.
-- [ ] last valid state retention.
-- [ ] stale calculation.
-- [ ] configurable polling intervals.
-- [ ] rate budget instrumentation.
+- [x] Zod schemas.
+- [x] provider response mappers.
+- [x] typed provider errors.
+- [x] LiveRaceState composer.
+- [x] event deduplication.
+- [x] last valid state retention.
+- [x] stale calculation.
+- [x] configurable polling intervals.
+- [x] rate budget instrumentation.
 
 ### Polling initial budget
 
@@ -1049,3 +1049,31 @@ Do not start Track Map until the live provider proof has succeeded.
 - GitHub CLI authentication and push are now complete: commit `4f73c72` is on `main` in `testxbusiness/racelab`.
 - Vercel production deployment is READY at `https://racelab-dusky.vercel.app` and has returned authenticated, validated live data after the OpenF1 secrets were configured.
 - Track Map, telemetry, PWA refinement, and all post-Monza features remain intentionally untouched.
+
+---
+
+# 23. Phase 2 implementation findings — 22 August 2026
+
+## Completed tasks
+
+- All live endpoint payloads used by the application, including stints, are validated with Zod before mapping.
+- `lib/openf1/mappers.ts` removes provider-specific names and fields at the domain boundary; React consumes only `LiveRaceState`.
+- `ProviderError` supplies consistent authentication, HTTP, validation, empty-session, and network error categories.
+- `LiveRaceState` composes position, intervals, laps, stints, and deduplicated race-control events per driver/session.
+- The in-memory server-side loader retains individual last-valid streams when a later request fails; the affected stream is marked `fallback` rather than blanking timing.
+- Freshness states use initial thresholds of ≤8 s live, ≤20 s delayed, and >20 s stale.
+- Polling intervals are centralised in `lib/openf1/polling.ts`; rate budget instrumentation records per-endpoint request count, status, latency and provider content-length headers.
+- Unit/integration-style coverage verifies schemas, auth cache, budget warning, composition, freshness, deduplication, and partial endpoint failure retention.
+- Final local verification: `npm run lint`, `npm run typecheck`, `npm test` (11 tests across 4 files), and `npm run build` pass. A source audit confirms the App Router UI does not reference OpenF1 snake_case payload fields.
+
+## Technical decisions
+
+- The current diagnostic endpoint performs an immediate composed snapshot. The central polling configuration is intentionally not turned into a client polling loop until the Race Radar UI phase, keeping OpenF1 credentials server-only.
+- Empty OpenF1 interval responses continue to be valid domain input, not provider failures.
+- Last-valid data is process-local for this Phase 2 serverless implementation. It survives warm invocations but is not a persistent cache.
+
+## Remaining risks and next action
+
+- Validate rate-limit thresholds against the actual OpenF1 subscription limit and set `OPENF1_RATE_LIMIT_PER_MINUTE` when known; the current 60/minute default is conservative instrumentation only.
+- Re-test stints and intervals during an active race session, where both streams are expected to contain useful timing/tyre data.
+- Next recommended action: begin Phase 3 Race Radar timing UI using `LiveRaceState`, without introducing Track Map work.
