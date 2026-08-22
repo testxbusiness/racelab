@@ -35,6 +35,9 @@ export async function openF1Fetch(path: string, init?: RequestInit, retried = fa
   requestTimes.push(Date.now());
   const response = await fetch(`${env.OPENF1_API_URL}/${path.replace(/^\//, "")}`, { ...init, headers, cache: "no-store" });
   if (response.status === 401 && !retried) return openF1Fetch(path, init, true);
+  // OpenF1 uses 404 with { detail: "No results found." } for valid empty queries.
+  // The provider validates that response and maps it to an empty collection.
+  if (response.status === 404) return response;
   if (!response.ok) throw new OpenF1Error(response.status, `OpenF1 request failed (${response.status})`);
   return response;
 }

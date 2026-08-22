@@ -1038,6 +1038,7 @@ Do not start Track Map until the live provider proof has succeeded.
 - Invalid provider payloads are discarded with a safe diagnostic error. Raw provider errors and credentials are not exposed.
 - Request count is tracked in-process for the last 60 seconds; shared telemetry is still needed if the app scales across instances.
 - A live endpoint inspection showed that OpenF1 can return `{"detail":"No results found."}` for a valid endpoint with no records; the provider maps this response to an empty validated collection. The same inspection exposed the public three-requests-per-second limit, so diagnostic calls are paced rather than fired concurrently.
+- Credentialed smoke testing confirmed sessions, drivers, position, laps, and race control return 200; intervals returns 404 with the documented empty-result body for the current qualifying session. The client now passes 404 through to Zod empty-result handling instead of treating it as an infrastructure failure.
 
 ## Remaining risks
 
