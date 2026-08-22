@@ -1045,5 +1045,5 @@ Do not start Track Map until the live provider proof has succeeded.
 - Vercel is not deployed: the CLI reports `Logged out`, and no deployment token is available. Deployment also requires the two OpenF1 secrets and `OPENF1_DIAGNOSTICS_ENABLED=true` as server environment variables.
 - The public repository `https://github.com/testxbusiness/racelab` was initially empty. The GitHub connector rejected content writes with `403 Resource not accessible by integration`, but CLI authentication later succeeded and the source was pushed.
 - GitHub CLI authentication and push are now complete: commit `4f73c72` is on `main` in `testxbusiness/racelab`.
-- Vercel production deployment is READY at `https://racelab-dusky.vercel.app`; the initial runtime correctly reported diagnostics disabled until `OPENF1_DIAGNOSTICS_ENABLED=true` was added. A redeploy is still required after adding that environment variable, and real live data still requires the two OpenF1 secrets.
+- Vercel production deployment is READY at `https://racelab-dusky.vercel.app`; after enabling diagnostics and redeploying, the live endpoint returns the safe 503 `OpenF1 credentials are not configured`. This proves the deployed server route is active; real live data still requires the two OpenF1 secrets.
 - Track Map, telemetry, PWA refinement, and all post-Monza features remain intentionally untouched.
