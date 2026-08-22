@@ -312,7 +312,7 @@ Essere pronti a interrogare OpenF1 Live prima della gara di Zandvoort.
 - [x] Add token cache.
 - [x] Add server route for live test.
 - [x] Add raw diagnostics screen protected by environment flag.
-- [ ] Deploy to Vercel.
+- [x] Deploy to Vercel.
 
 ### Do not do
 
@@ -1012,10 +1012,10 @@ Every task must satisfy where applicable:
 - [x] Implement authenticated sessions, drivers, position, intervals, and race-control access.
 - [x] Validate provider payloads with Zod before they enter the provider result.
 - [x] Add `/api/openf1/live` and a server-rendered diagnostic page at `/`.
-- [ ] Configure OpenF1 live credentials in the deployment environment.
+- [x] Configure OpenF1 live credentials in the deployment environment.
 - [x] Deploy live diagnostics page to Vercel: https://racelab-dusky.vercel.app
-- [ ] Push the local source to `testxbusiness/racelab`.
-- [ ] Test on Zandvoort.
+- [x] Push the local source to `testxbusiness/racelab`.
+- [x] Test on Zandvoort.
 
 ## Stop condition
 
@@ -1040,12 +1040,12 @@ Do not start Track Map until the live provider proof has succeeded.
 - A live endpoint inspection showed that OpenF1 can return `{"detail":"No results found."}` for a valid endpoint with no records; the provider maps this response to an empty validated collection. The same inspection exposed the public three-requests-per-second limit, so diagnostic calls are paced rather than fired concurrently.
 - Credentialed smoke testing confirmed sessions, drivers, position, laps, and race control return 200; intervals returns 404 with the documented empty-result body for the current qualifying session. The client now passes 404 through to Zod empty-result handling instead of treating it as an infrastructure failure.
 - Credentialed production smoke testing exposed the real laps shape (`date_start`/`date_end`, nullable); the lap schema now accepts that provider shape while keeping the required identity and lap-number fields strict.
+- Final production verification at `https://racelab-dusky.vercel.app` returned `ok:true` for session `11349` with 22 drivers, 1184 position records, 0 intervals (valid empty result), 377 laps, 118 race-control events, `requestCount=6`, and a source timestamp. The page rendered the live header for 2026 Zandvoort qualifying.
 
 ## Remaining risks
 
-- Live OAuth has not been exercised end-to-end here because `OPENF1_USERNAME` and `OPENF1_PASSWORD` are not configured. Credentialed smoke testing is still required during the Zandvoort live window.
-- Vercel is not deployed: the CLI reports `Logged out`, and no deployment token is available. Deployment also requires the two OpenF1 secrets and `OPENF1_DIAGNOSTICS_ENABLED=true` as server environment variables.
+- Intervals are unavailable for the verified qualifying snapshot; the UI intentionally shows unavailable interval values while retaining the other live streams. Re-test during a race session where interval records are present.
 - The public repository `https://github.com/testxbusiness/racelab` was initially empty. The GitHub connector rejected content writes with `403 Resource not accessible by integration`, but CLI authentication later succeeded and the source was pushed.
 - GitHub CLI authentication and push are now complete: commit `4f73c72` is on `main` in `testxbusiness/racelab`.
-- Vercel production deployment is READY at `https://racelab-dusky.vercel.app`; after enabling diagnostics and redeploying, the live endpoint returns the safe 503 `OpenF1 credentials are not configured`. This proves the deployed server route is active; real live data still requires the two OpenF1 secrets.
+- Vercel production deployment is READY at `https://racelab-dusky.vercel.app` and has returned authenticated, validated live data after the OpenF1 secrets were configured.
 - Track Map, telemetry, PWA refinement, and all post-Monza features remain intentionally untouched.
