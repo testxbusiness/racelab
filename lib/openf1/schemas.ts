@@ -26,7 +26,10 @@ export const raceControlSchema = z.object({
   date, session_key: z.number(), category: z.string(),
   message: z.string().optional(), flag: z.string().nullable().optional(),
 }).passthrough();
-export const lapSchema = z.object({ date, session_key: z.number(), driver_number: z.number(), lap_number: z.number() }).passthrough();
+export const lapSchema = z.object({
+  date: date.optional(), session_key: z.number(), driver_number: z.number(), lap_number: z.number(),
+  date_start: date.nullable().optional(), date_end: date.nullable().optional(),
+}).passthrough();
 
 export const tokenResponseSchema = z.object({ access_token: z.string().min(1), expires_in: z.coerce.number().positive(), token_type: z.string() });
 export const emptyResultSchema = z.object({ detail: z.literal("No results found.") });

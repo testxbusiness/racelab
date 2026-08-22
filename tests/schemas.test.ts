@@ -15,7 +15,7 @@ describe("OpenF1 Phase 1 schemas", () => {
     expect(emptyResultSchema.safeParse({ detail: "No results found." }).success).toBe(true);
   });
   it("validates lap data used by the diagnostic summary", () => {
-    expect(lapSchema.parse({ date: "2026-08-23T12:00:00+00:00", session_key: 1, driver_number: 1, lap_number: 7 }).lap_number).toBe(7);
+    expect(lapSchema.parse({ date_start: null, date_end: null, session_key: 1, driver_number: 1, lap_number: 7 }).lap_number).toBe(7);
   });
 
   it("authenticates server-side once and reuses the bearer token", async () => {

@@ -20,7 +20,7 @@ export async function getDiagnostics(): Promise<{ ok: true; receivedAt: string; 
     const laps = await openF1Provider.getLaps(sessionKey);
     await waitBetweenRequests();
     const raceControl = await openF1Provider.getRaceControl(sessionKey);
-    const dates = [...positions, ...intervals, ...laps, ...raceControl].map((item) => item.date).sort();
+    const dates = [...positions, ...intervals, ...laps, ...raceControl].map((item) => item.date).filter((value): value is string => Boolean(value)).sort();
     return { ok: true, receivedAt, data: { sessions, drivers, positions, intervals, laps, raceControl }, requestCount: getRequestsLastMinute(), lastSourceTimestamp: dates.at(-1) ?? null };
   } catch (error) { return { ok: false, receivedAt, error: error instanceof Error ? error.message : "OpenF1 request failed" }; }
 }
