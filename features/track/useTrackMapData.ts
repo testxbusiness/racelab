@@ -5,7 +5,7 @@ import { z } from "zod";
 import { MONZA_LOCATION_BOUNDS, mergeLatestLocationSamples, type LocationBounds } from "@/lib/f1/domain/location";
 import type { LiveLocationSample } from "@/lib/f1/domain/live";
 
-type MapStatus = "loading" | "live" | "delayed" | "stale" | "unavailable";
+type MapStatus = "loading" | "live" | "delayed" | "stale" | "unavailable" | "paused";
 type MapData = { samples: LiveLocationSample[]; bounds: LocationBounds; sourceTimestamp: string | null; status: MapStatus; error: string | null };
 const sampleSchema = z.object({ driverNumber: z.number(), x: z.number(), y: z.number(), z: z.number(), sourceTimestamp: z.string() });
 const responseSchema = z.discriminatedUnion("ok", [z.object({ ok: z.literal(true), snapshot: z.object({ samples: z.array(sampleSchema), sourceTimestamp: z.string().nullable(), receivedAt: z.string() }) }), z.object({ ok: z.literal(false), error: z.string() })]);
@@ -16,10 +16,15 @@ export function locationStatusFor(sourceTimestamp: string | null, now = Date.now
   return age <= 8_000 ? "live" : age <= 20_000 ? "delayed" : "stale";
 }
 
-export function useTrackMapData(sessionKey: number, coordinateBounds: LocationBounds = MONZA_LOCATION_BOUNDS): MapData {
+export function useTrackMapData(sessionKey: number, coordinateBounds: LocationBounds = MONZA_LOCATION_BOUNDS, enabled = true): MapData {
   const [data, setData] = useState<MapData>({ samples: [], bounds: coordinateBounds, sourceTimestamp: null, status: "loading", error: null });
   useEffect(() => {
     let active = true;
+    let visibilityTimer: number | null = null;
+    if (!enabled) {
+      setData({ samples: [], bounds: coordinateBounds, sourceTimestamp: null, status: "paused", error: null });
+      return () => { active = false; };
+    }
     setData({ samples: [], bounds: coordinateBounds, sourceTimestamp: null, status: "loading", error: null });
     let cursor: string | null = null;
     const storageKey = `racelab:location-cursor:${sessionKey}`;
@@ -44,9 +49,13 @@ export function useTrackMapData(sessionKey: number, coordinateBounds: LocationBo
     };
     void refresh();
     const timer = window.setInterval(refresh, 5_000);
-    const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (visibilityTimer !== null) window.clearTimeout(visibilityTimer);
+      visibilityTimer = window.setTimeout(() => { visibilityTimer = null; void refresh(); }, 1_000);
+    };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [sessionKey, coordinateBounds]);
+    return () => { active = false; window.clearInterval(timer); if (visibilityTimer !== null) window.clearTimeout(visibilityTimer); document.removeEventListener("visibilitychange", onVisible); };
+  }, [sessionKey, coordinateBounds, enabled]);
   return data;
 }

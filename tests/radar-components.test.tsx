@@ -20,6 +20,10 @@ describe("Race Radar components", () => {
     const html = renderToStaticMarkup(<LiveHeader state={state} reconnecting={false} offline={false} />);
     expect(html).toContain("Italian Grand Prix"); expect(html).toContain("LAP 37/53"); expect(html).toContain("LIVE"); expect(html).toContain("DATA AGE 2.0s");
   });
+  it("marks preserved timing as retrying without removing the live header", () => {
+    const html = renderToStaticMarkup(<LiveHeader state={state} reconnecting={false} retrying offline={false} />);
+    expect(html).toContain("RETRYING"); expect(html).toContain("Italian Grand Prix");
+  });
   it("renders timing, interval, team accent and tyre age without provider payloads", () => {
     const html = renderToStaticMarkup(<Leaderboard timing={state.timing} favouriteDriverNumber={16} onDriverSelect={() => undefined} />);
     expect(html).toContain("LEC"); expect(html).toContain("+1.842"); expect(html).toContain("M"); expect(html).toContain("9"); expect(html).toContain("--team-accent:#E8002D");

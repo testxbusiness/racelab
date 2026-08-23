@@ -622,15 +622,22 @@ Optimise for the real circuit failure mode.
 
 ### Tasks
 
-- [ ] online/offline listener.
-- [ ] retry/backoff.
-- [ ] last known state.
-- [ ] Low Data Mode.
-- [ ] pause map fetch in Low Data.
-- [ ] reduce polling in Low Data.
-- [ ] visibility/background behaviour.
-- [ ] stale UI.
-- [ ] manual retry.
+- [x] online/offline listener.
+- [x] retry/backoff.
+- [x] last known state.
+- [x] Low Data Mode.
+- [x] pause map fetch in Low Data.
+- [x] reduce polling in Low Data.
+- [x] visibility/background behaviour.
+- [x] stale UI.
+- [x] manual retry.
+
+### Phase 7 implementation findings — 23 Aug 2026
+
+- [x] Core polling now uses one in-flight request at a time, 6s normal / 18s Low Data cadence, and capped exponential retry delays of 3s, 6s, 12s, 24s, then 30s.
+- [x] Online/offline and visibility transitions suspend background network work. Returning online or foreground starts a core timing refresh immediately; map refresh is intentionally delayed by one second so core timing has priority.
+- [x] Failed responses never clear the last valid race state. The header shows `OFFLINE`, `RETRYING`, and an increasing data age; the notice provides a manual retry control.
+- [x] Low Data Mode is persisted locally, pauses all live location requests and marker animation, and reduces core polling while preserving the composite timing response (positions, intervals, race-control, tyre/stint fields).
 
 ### Tests
 
@@ -641,6 +648,14 @@ DevTools:
 - offline 15 s;
 - offline 60 s;
 - packet-like intermittent failures.
+
+### Phase 7 verification — 23 Aug 2026
+
+- [x] Simulated slow request: polling controller permits only one in-flight request, including manual retry/foreground events.
+- [x] Simulated temporary and 60-second offline/background intervals: no scheduled request runs until resume, then core timing refreshes immediately.
+- [x] Simulated intermittent provider failures: last valid state callback is never cleared; retry schedule backs off then resets after success.
+- [x] Low Data map rendering test verifies the map is visibly paused while core timing remains active.
+- [x] `npm run lint`, `npm run typecheck`, `npm test` (43 tests), and `npm run build` passed.
 
 ---
 

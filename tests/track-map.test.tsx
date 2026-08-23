@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { describe, expect, it } from "vitest";
 import { TrackMap } from "@/components/track/TrackMap";
+import { TrackMapPanel } from "@/components/track/TrackMapPanel";
 import { getTrackGeometry } from "@/components/track/track-geometries";
 
 describe("TrackMap", () => {
@@ -12,5 +13,9 @@ describe("TrackMap", () => {
   it("renders the preprocessed Zandvoort geometry", () => {
     const html = renderToStaticMarkup(<TrackMap geometry={getTrackGeometry("Zandvoort")!} markers={[]} favouriteDriverNumber={null} selectedDriverNumber={null} onSelectDriver={() => undefined} />);
     expect(html).toContain("Zandvoort track map"); expect(html).toContain("M181 300");
+  });
+  it("pauses location activity in Low Data Mode without affecting core timing", () => {
+    const html = renderToStaticMarkup(<TrackMapPanel sessionKey={1} timing={[]} favouriteDriverNumber={null} geometry={getTrackGeometry("Monza")!} lowDataMode />);
+    expect(html).toContain("MAP PAUSED"); expect(html).toContain("Core timing remains active");
   });
 });
