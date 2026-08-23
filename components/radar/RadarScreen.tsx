@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import type { LiveRaceState } from "@/lib/f1/domain/live";
+import { selectDriverFocus } from "@/lib/f1/selectors/focus";
+import { useFavouriteDriver } from "@/features/focus/useFavouriteDriver";
+import { DriverFocusSheet } from "./DriverFocusSheet";
 import { EventFeed } from "./EventFeed";
 import { Leaderboard } from "./Leaderboard";
 import { LiveHeader } from "./LiveHeader";
@@ -16,6 +19,9 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
   const [error, setError] = useState(initialError);
   const [reconnecting, setReconnecting] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [favouriteDriverNumber, setFavouriteDriverNumber] = useFavouriteDriver();
+  const [focusedDriverNumber, setFocusedDriverNumber] = useState<number | null>(null);
+  const focus = state ? selectDriverFocus(state.timing, focusedDriverNumber) : null;
 
   useEffect(() => {
     const onOnline = () => setOffline(false);
@@ -37,5 +43,5 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
     return () => { window.clearInterval(timer); window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, [state]);
 
-  return <main className="radar-page"><div className="radar-shell">{state ? <><LiveHeader state={state} reconnecting={reconnecting} offline={offline} /><RadarViewTabs /><div className="refresh-notice" aria-live="polite">{error ? `Showing last valid timing · ${error}` : reconnecting ? "Checking for a newer timing state…" : "Live timing refreshes automatically"}</div><div id="timing"><RaceStatus state={state} /><Leaderboard timing={state.timing} /></div><div id="events"><EventFeed events={state.raceControl} /></div></> : <section className="unavailable-card"><span className="unavailable-icon" aria-hidden="true">!</span><h1>Live timing unavailable</h1><p>{error ?? "The provider did not return a session. Race Radar will retry automatically."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></section>}<RadarNav /></div></main>;
+  return <main className="radar-page"><div className="radar-shell">{state ? <><LiveHeader state={state} reconnecting={reconnecting} offline={offline} /><RadarViewTabs /><div className="refresh-notice" aria-live="polite">{error ? `Showing last valid timing · ${error}` : reconnecting ? "Checking for a newer timing state…" : "Live timing refreshes automatically"}</div><div id="timing"><RaceStatus state={state} /><Leaderboard timing={state.timing} favouriteDriverNumber={favouriteDriverNumber} onDriverSelect={(driver) => setFocusedDriverNumber(driver.driver.number)} /></div><div id="events"><EventFeed events={state.raceControl} /></div><DriverFocusSheet focus={focus} isFavourite={focus?.timing.driver.number === favouriteDriverNumber} onClose={() => setFocusedDriverNumber(null)} onSetFavourite={() => { if (focus) setFavouriteDriverNumber(focus.timing.driver.number); }} /></> : <section className="unavailable-card"><span className="unavailable-icon" aria-hidden="true">!</span><h1>Live timing unavailable</h1><p>{error ?? "The provider did not return a session. Race Radar will retry automatically."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></section>}<RadarNav /></div></main>;
 }

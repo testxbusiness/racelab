@@ -28,6 +28,7 @@ export const raceControlSchema = z.object({
 }).passthrough();
 export const lapSchema = z.object({
   date: date.optional(), session_key: z.number(), driver_number: z.number(), lap_number: z.number(),
+  lap_duration: z.number().nullable().optional(),
   date_start: date.nullable().optional(), date_end: date.nullable().optional(),
 }).passthrough();
 export const stintSchema = z.object({

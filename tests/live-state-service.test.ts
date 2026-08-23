@@ -16,7 +16,7 @@ describe("live state loader", () => {
       getDrivers: async () => [{ driver_number: 16, full_name: "Charles Leclerc", name_acronym: "LEC" }],
       getPositions: async () => [{ date: timestamp, driver_number: 16, position: 2, session_key: 1 }],
       getIntervals: async () => { if (failIntervals) throw new Error("intervals down"); return [{ date: timestamp, driver_number: 16, session_key: 1, interval: 1.2, gap_to_leader: 4.1 }]; },
-      getLaps: async () => [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null }],
+      getLaps: async () => [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null, lap_duration: null }],
       getStints: async () => [],
       getRaceControl: async () => [],
     };
@@ -40,7 +40,7 @@ describe("live state loader", () => {
       getDrivers: async () => [{ driver_number: 16, full_name: "Charles Leclerc", name_acronym: "LEC" }],
       getPositions: async () => { calls.position += 1; return [{ date: timestamp, driver_number: 16, position: 2, session_key: 1 }]; },
       getIntervals: async () => { calls.intervals += 1; return [{ date: timestamp, driver_number: 16, session_key: 1, interval: 1.2, gap_to_leader: 4.1 }]; },
-      getLaps: async () => { calls.laps += 1; return [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null }]; },
+      getLaps: async () => { calls.laps += 1; return [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null, lap_duration: null }]; },
       getStints: async () => [],
       getRaceControl: async () => { calls.raceControl += 1; return []; },
     };

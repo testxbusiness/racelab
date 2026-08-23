@@ -491,16 +491,25 @@ Personalise the live experience.
 
 ### Tasks
 
-- [ ] choose favourite driver.
-- [ ] localStorage persistence.
-- [ ] favourite row state.
-- [ ] DriverFocusSheet.
-- [ ] gap ahead/behind.
-- [ ] last lap.
-- [ ] tyre/stint.
-- [ ] focus state selectors.
+- [x] choose favourite driver from the row focus sheet.
+- [x] localStorage persistence without an account.
+- [x] favourite row state.
+- [x] DriverFocusSheet bottom-sheet detail view.
+- [x] gap ahead/behind derived from the composed timing state.
+- [x] last lap and best lap when lap duration data is available.
+- [x] tyre/stint.
+- [x] focus state selectors.
 
 No account.
+
+### Phase 4 implementation notes — 23 Aug 2026
+
+- [x] Favourite driver state is stored under `racelab:favourite-driver` in browser localStorage; clearing the favourite removes the key and no server/account state was introduced.
+- [x] Leaderboard rows are accessible buttons. Tapping one opens `DriverFocusSheet`; the selected favourite gets a subtle accent highlight and star marker.
+- [x] Focus metrics are selected from `LiveRaceState.timing`, including derived adjacent-car gaps. Missing values render as `—`.
+- [x] Lap duration is mapped when OpenF1 provides `lap_duration` or a start/end interval; best lap is derived from the already-loaded lap stream without adding a provider call.
+- [x] Added selector and radar component coverage. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (18 tests), and `npm run build`.
+- [ ] Deploy the verified production build after the Phase 4 commit is published.
 
 ---
 

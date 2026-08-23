@@ -14,7 +14,7 @@ describe("LiveRaceState composer", () => {
       drivers: [{ number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }],
       positions: [{ driverNumber: 16, position: 2, sourceTimestamp: "2026-08-22T14:59:58.000Z" }],
       intervals: [{ driverNumber: 16, interval: 1.2, gapToLeader: 4.1, sourceTimestamp: "2026-08-22T14:59:57.000Z" }],
-      laps: [{ driverNumber: 16, lapNumber: 21, sourceTimestamp: null }],
+      laps: [{ driverNumber: 16, lapNumber: 21, durationSeconds: 81.234, sourceTimestamp: null }],
       stints: [{ driverNumber: 16, stintNumber: 2, compound: "MEDIUM", lapStart: 15, lapEnd: 21, tyreAgeAtStart: 3 }],
       raceControl: [
         { id: "same", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "GREEN FLAG", flag: "GREEN", driverNumber: null, lapNumber: 21 },

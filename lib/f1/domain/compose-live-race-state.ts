@@ -62,6 +62,10 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
   const positions = latestByDriver(input.positions);
   const intervals = latestByDriver(input.intervals);
   const laps = latestByDriver(input.laps);
+  const lapTimes = new Map<number, number>();
+  for (const lap of input.laps) {
+    if (lap.durationSeconds !== null && (!lapTimes.has(lap.driverNumber) || lap.durationSeconds < lapTimes.get(lap.driverNumber)!)) lapTimes.set(lap.driverNumber, lap.durationSeconds);
+  }
   const stints = latestStintByDriver(input.stints);
   const timing: LiveDriverTiming[] = input.drivers.map((driver) => {
     const position = positions.get(driver.number);
@@ -69,7 +73,7 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
     const lap = laps.get(driver.number);
     const stint = stints.get(driver.number);
     const tyreAge = stint && lap ? Math.max(stint.tyreAgeAtStart, stint.tyreAgeAtStart + lap.lapNumber - stint.lapStart) : null;
-    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, inPit: null, retired: null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
+    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, lastLapSeconds: lap?.durationSeconds ?? null, bestLapSeconds: lapTimes.get(driver.number) ?? null, inPit: null, retired: null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
   }).sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
   const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   const events = deduplicateRaceControl(input.raceControl);
