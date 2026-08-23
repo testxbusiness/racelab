@@ -13,7 +13,10 @@ export function DriverFocusSheet({ focus, isFavourite, onClose, onSetFavourite }
   return <div className="focus-backdrop" role="presentation" onClick={onClose}>
     <section className="focus-sheet" role="dialog" aria-modal="true" aria-labelledby="focus-title" onClick={(event) => event.stopPropagation()}>
       <div className="focus-sheet-handle" aria-hidden="true" />
-      <div className="focus-sheet-heading"><div><p className="eyebrow">DRIVER FOCUS</p><h2 id="focus-title">{timing.driver.fullName}</h2><span>{timing.driver.acronym} · {timing.driver.teamName ?? "Team unavailable"}</span></div><button type="button" className="sheet-close" onClick={onClose} aria-label="Close driver focus">×</button></div>
+      <div className="focus-hero" style={{ "--focus-accent": timing.driver.teamColour ? `#${timing.driver.teamColour.replace("#", "")}` : "var(--accent)" } as React.CSSProperties}>
+        <div className="focus-hero-copy"><p className="eyebrow">DRIVER FOCUS · {timing.driver.acronym}</p><h2 id="focus-title">{timing.driver.fullName}</h2><span>{timing.driver.teamName ?? "Team unavailable"}</span></div><span className="driver-number" aria-label={`Car number ${timing.driver.number}`}>{timing.driver.number}</span>
+        <button type="button" className="sheet-close" onClick={onClose} aria-label="Close driver focus">×</button>
+      </div>
       <button type="button" className={`favourite-action${isFavourite ? " favourite-action-active" : ""}`} onClick={onSetFavourite}>{isFavourite ? "★ Favourite driver" : "☆ Set as favourite"}</button>
       <div className="focus-grid">
         <div><span>POSITION</span><strong>{timing.position ?? "—"}</strong></div>

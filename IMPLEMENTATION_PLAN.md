@@ -481,6 +481,37 @@ On iPhone portrait:
 - [x] Kept Map, Weekend, Focus, and Settings visibly represented but non-functional until their planned phases; no static driver or track data was introduced.
 - [x] Added accessible focus states, inline SVG navigation icons, reduced-motion support, and render coverage for the new shell.
 
+### UI/UX redesign pass — 23 Aug 2026
+
+- [x] Reworked the driver focus sheet toward the supplied `design_test/new_design.png` reference: hero treatment, team accent, and driver number without external photos or logos.
+- [x] Kept the team colour as the primary visual identity in the hero, timing rows, tyre chips, and focus state.
+- [x] Removed the previously downloaded official F1 media assets and the unused lookup module after product clarification.
+- [x] Verified with `npm test`, `npm run typecheck`, and `npm run lint`.
+
+### UI/UX redesign risks / next action
+
+- The current local asset set covers the Ferrari / Charles Leclerc focus state shown in the reference. Extend the same catalog for the remaining 2026 drivers and teams before the Focus/Weekend phases are closed.
+- Official F1 media assets are used according to the requested source; review Formula 1 usage terms before any public/commercial distribution.
+
+### UI/UX redesign pass 2 — 23 Aug 2026
+
+- [x] Added a desktop RaceLab rail matching the supplied composition while preserving the mobile bottom navigation and one-hand flow.
+- [x] Added the visual hierarchy for section labels, disabled future areas, active Race Radar state, technical grid background, and sharper card treatment.
+- [x] Removed all pilot/car imagery from the focus design; team colours, driver number, and data remain the only visual identity cues.
+- [x] Verified with `npm test` (48 tests), `npm run typecheck`, `npm run lint`, and `npm run build`.
+
+### UI/UX redesign pass 2 risks / next action
+
+- The desktop rail currently keeps future sections visibly disabled until their planned functionality is implemented; this preserves the reference navigation without inventing later-phase data.
+
+### UI/UX polish pass — 23 Aug 2026
+
+- [x] Added explicit visual variants for live, delayed/retrying, offline/cached, and initial loading states in the existing Radar shell.
+- [x] Refined the existing Event Feed into a timeline treatment and strengthened the Map panel surface while keeping both data flows unchanged.
+- [x] Added small-screen layout adjustments for timing columns and retained touch targets/focus states.
+- [x] Kept unimplemented Weekend, Settings, and Outdoor Mode sections out of scope as requested.
+- [x] Verified with `npm test` (48 tests), `npm run typecheck`, `npm run lint`, and `npm run build`.
+
 ---
 
 # PHASE 4 — 28 AUG — FOCUS DRIVER
