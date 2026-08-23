@@ -509,7 +509,7 @@ No account.
 - [x] Focus metrics are selected from `LiveRaceState.timing`, including derived adjacent-car gaps. Missing values render as `—`.
 - [x] Lap duration is mapped when OpenF1 provides `lap_duration` or a start/end interval; best lap is derived from the already-loaded lap stream without adding a provider call.
 - [x] Added selector and radar component coverage. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (18 tests), and `npm run build`.
-- [ ] Deploy the verified production build after the Phase 4 commit is published.
+- [x] Deployed the verified production build to Vercel after publishing the Phase 4 commit.
 
 ---
 
