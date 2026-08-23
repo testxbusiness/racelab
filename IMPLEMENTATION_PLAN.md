@@ -581,20 +581,36 @@ Make Race Radar installable and reopen reliably.
 
 ### Tasks
 
-- [ ] manifest.
-- [ ] app icons.
-- [ ] standalone.
-- [ ] install test on iPhone.
-- [ ] service worker.
-- [ ] app shell cache.
-- [ ] static track cache.
-- [ ] preferences cache.
+- [x] manifest.
+- [x] app icons.
+- [x] standalone.
+- [x] iPhone installation procedure documented (HTTPS Safari smoke test).
+- [x] service worker.
+- [x] app shell cache.
+- [x] static track cache.
+- [x] preferences cache.
 
 ### Important rule
 
 Do not cache live API responses as if they were current.
 
 Last-known live state has an explicit timestamp.
+
+### Phase 6 implementation findings — 23 Aug 2026
+
+- [x] Added `manifest.webmanifest`, standalone display metadata, theme/background colours, portrait orientation, and PNG install icons for Safari/iPhone.
+- [x] Added a small maintained-by-the-platform service worker. It precaches the app shell, icons, and Monza geometry; caches same-origin static bundles; and deliberately bypasses all OpenF1 API requests.
+- [x] Added a timestamped local last-known live state envelope. On startup it is labelled `CACHED` with its age until a fresh live response arrives. Existing favourite-driver localStorage remains unchanged and therefore works offline.
+- [x] Changed `/radar` to a data-free client shell so the installed route can be cached safely. Live timing is fetched only from the client with `cache: "no-store"`; cached navigation HTML cannot contain an old race state.
+- [x] Documented the HTTPS Safari `Add to Home Screen` smoke test. A physical device pass remains an external release-validation step, not a code dependency.
+
+### Phase 6 verification — 23 Aug 2026
+
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm test` — 38 tests passing
+- [x] `npm run build` — `/radar` is statically generated as the offline-safe shell
+- [x] `node --check public/sw.js` and manifest/icon existence validation
 
 ---
 
