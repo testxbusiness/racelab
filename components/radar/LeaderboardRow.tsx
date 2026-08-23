@@ -1,8 +1,9 @@
 import React from "react";
 import type { LiveDriverTiming } from "@/lib/f1/domain/live";
 import { TyreBadge } from "./TyreBadge";
+import type { LiveGap } from "@/lib/f1/domain/live";
 
-function timingValue(value: number | null) { return value === null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(3)}`; }
+function timingValue(value: LiveGap) { return value === null ? "—" : typeof value === "string" ? value : `${value >= 0 ? "+" : ""}${value.toFixed(3)}`; }
 
 export function LeaderboardRow({ driver, favourite, onSelect }: { driver: LiveDriverTiming; favourite: boolean; onSelect: () => void }) {
   const teamStyle = driver.driver.teamColour ? { "--team-accent": `#${driver.driver.teamColour.replace("#", "")}` } as React.CSSProperties : undefined;

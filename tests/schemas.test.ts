@@ -7,6 +7,8 @@ describe("OpenF1 Phase 1 schemas", () => {
   it("accepts position and nullable interval fields", () => {
     expect(positionSchema.parse({ date: "2026-08-23T12:00:00+00:00", driver_number: 1, position: 2, session_key: 1 }).position).toBe(2);
     expect(intervalSchema.parse({ date: "2026-08-23T12:00:00+00:00", driver_number: 1, session_key: 1, interval: null, gap_to_leader: null }).interval).toBeNull();
+    expect(intervalSchema.parse({ date: "2026-08-23T12:00:00+00:00", driver_number: 1, session_key: 1, interval: "+1 LAP", gap_to_leader: "+2 LAPS" }).interval).toBe("+1 LAP");
+    expect(intervalSchema.safeParse({ date: "2026-08-23T12:00:00+00:00", driver_number: 1, session_key: 1, interval: "unknown", gap_to_leader: null }).success).toBe(false);
   });
   it("rejects malformed race control timestamps", () => {
     expect(raceControlSchema.safeParse({ date: "not-a-date", session_key: 1, category: "Flag" }).success).toBe(false);

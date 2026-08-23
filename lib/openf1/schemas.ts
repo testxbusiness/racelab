@@ -21,9 +21,11 @@ export const locationSchema = z.object({
   date, driver_number: z.number(), session_key: z.number(), x: z.number(), y: z.number(), z: z.number(),
 }).passthrough();
 
+const intervalValue = z.union([z.number(), z.string().regex(/^\+\d+ LAP(?:S)?$/)]).nullable();
+
 export const intervalSchema = z.object({
-  date, driver_number: z.number(), session_key: z.number(), interval: z.number().nullable(),
-  gap_to_leader: z.number().nullable(),
+  date, driver_number: z.number(), session_key: z.number(), interval: intervalValue,
+  gap_to_leader: intervalValue,
 }).passthrough();
 
 export const raceControlSchema = z.object({

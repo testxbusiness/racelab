@@ -3,8 +3,9 @@
 import React from "react";
 import type { DriverFocus } from "@/lib/f1/selectors/focus";
 import { TyreBadge } from "./TyreBadge";
+import type { LiveGap } from "@/lib/f1/domain/live";
 
-function value(value: number | null, suffix = "s"): string { return value === null ? "—" : `${value.toFixed(3)}${suffix}`; }
+function value(value: number | LiveGap, suffix = "s"): string { return value === null ? "—" : typeof value === "string" ? value : `${value.toFixed(3)}${suffix}`; }
 
 export function DriverFocusSheet({ focus, isFavourite, onClose, onSetFavourite }: { focus: DriverFocus | null; isFavourite: boolean; onClose: () => void; onSetFavourite: () => void }) {
   if (!focus) return null;

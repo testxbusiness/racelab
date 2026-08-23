@@ -655,7 +655,12 @@ DevTools:
 - [x] Simulated temporary and 60-second offline/background intervals: no scheduled request runs until resume, then core timing refreshes immediately.
 - [x] Simulated intermittent provider failures: last valid state callback is never cleared; retry schedule backs off then resets after success.
 - [x] Low Data map rendering test verifies the map is visibly paused while core timing remains active.
-- [x] `npm run lint`, `npm run typecheck`, `npm test` (43 tests), and `npm run build` passed.
+- [x] `npm run lint`, `npm run typecheck`, `npm test` (45 tests), and `npm run build` passed.
+
+### Live provider compatibility follow-up — 23 Aug 2026
+
+- [x] OpenF1 interval payloads accept numeric/null gaps and documented lapped-driver labels such as `+1 LAP`/`+N LAPS`.
+- [x] Lapped labels remain visible in the leaderboard and driver focus UI; numeric-only calculations skip nonnumeric labels safely.
 
 ---
 

@@ -22,8 +22,9 @@ export type LiveSession = {
 };
 
 export type LiveDriver = { number: number; fullName: string; acronym: string; teamName: string | null; teamColour: string | null };
+export type LiveGap = number | string | null;
 export type LivePosition = { driverNumber: number; position: number; sourceTimestamp: string };
-export type LiveInterval = { driverNumber: number; interval: number | null; gapToLeader: number | null; sourceTimestamp: string };
+export type LiveInterval = { driverNumber: number; interval: LiveGap; gapToLeader: LiveGap; sourceTimestamp: string };
 export type LiveLap = { driverNumber: number; lapNumber: number; durationSeconds: number | null; sourceTimestamp: string | null };
 export type LiveLocationSample = { driverNumber: number; x: number; y: number; z: number; sourceTimestamp: string };
 export type LiveStint = { driverNumber: number; stintNumber: number; compound: string; lapStart: number; lapEnd: number; tyreAgeAtStart: number };
@@ -32,8 +33,8 @@ export type LiveRaceControlEvent = { id: string; sourceTimestamp: string; catego
 export type LiveDriverTiming = {
   driver: LiveDriver;
   position: number | null;
-  gapToLeader: number | null;
-  interval: number | null;
+  gapToLeader: LiveGap;
+  interval: LiveGap;
   compound: string | null;
   tyreAge: number | null;
   lastLapSeconds: number | null;
