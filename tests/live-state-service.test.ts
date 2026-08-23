@@ -9,9 +9,10 @@ describe("live state loader", () => {
 
   it("selects the scheduled Race session when the provider returns a meeting timeline", () => {
     expect(selectRaceSession([
-      { key: 1, meetingKey: 2, name: "Qualifying", type: "Qualifying", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-22T14:00:00Z", dateEnd: null },
-      { key: 2, meetingKey: 2, name: "Race", type: "Race", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-23T13:00:00Z", dateEnd: null },
-    ])?.key).toBe(2);
+      { key: 1, meetingKey: 2, name: "Sprint", type: "Race", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-22T10:00:00Z", dateEnd: null },
+      { key: 2, meetingKey: 2, name: "Qualifying", type: "Qualifying", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-22T14:00:00Z", dateEnd: null },
+      { key: 3, meetingKey: 2, name: "Race", type: "Race", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-23T13:00:00Z", dateEnd: null },
+    ])?.key).toBe(3);
   });
 
   it("retains the last valid stream when one endpoint fails", async () => {

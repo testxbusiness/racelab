@@ -60,7 +60,8 @@ export function createLiveStateLoader(provider: OpenF1LiveProvider) {
 }
 
 export function selectRaceSession(sessions: LiveSession[]): LiveSession | null {
-  return sessions.find((session) => session.type.toLowerCase() === "race") ?? [...sessions].sort((a, b) => (a.dateStart ?? "").localeCompare(b.dateStart ?? "")).at(-1) ?? null;
+  const races = sessions.filter((session) => session.type.toLowerCase() === "race");
+  return races.find((session) => session.name.toLowerCase() === "race") ?? [...races].sort((a, b) => (a.dateStart ?? "").localeCompare(b.dateStart ?? "")).at(-1) ?? [...sessions].sort((a, b) => (a.dateStart ?? "").localeCompare(b.dateStart ?? "")).at(-1) ?? null;
 }
 
 const defaultLoader = createLiveStateLoader(openF1Provider);
