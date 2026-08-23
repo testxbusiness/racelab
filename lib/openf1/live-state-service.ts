@@ -39,7 +39,7 @@ export function createLiveStateLoader(provider: OpenF1LiveProvider) {
 
   async function getLiveRaceState(): Promise<LiveRaceState> {
     const now = Date.now();
-    const sessions = await load("session", async () => (await provider.getSessions()).map(mapSession)[0] ?? null, cache.session, POLLING_INTERVALS.session, now);
+    const sessions = await load("session", async () => selectRaceSession((await provider.getSessions()).map(mapSession)), cache.session, POLLING_INTERVALS.session, now);
     if (!sessions.data) throw toProviderError(new Error("OpenF1 returned no latest session"), "session");
     cache.session = sessions.data;
     const sessionKey = sessions.data.key;
@@ -57,6 +57,10 @@ export function createLiveStateLoader(provider: OpenF1LiveProvider) {
   }
 
   return { getLiveRaceState, reset: () => { cache = emptyCache(); meta = {}; } };
+}
+
+export function selectRaceSession(sessions: LiveSession[]): LiveSession | null {
+  return sessions.find((session) => session.type.toLowerCase() === "race") ?? [...sessions].sort((a, b) => (a.dateStart ?? "").localeCompare(b.dateStart ?? "")).at(-1) ?? null;
 }
 
 const defaultLoader = createLiveStateLoader(openF1Provider);

@@ -35,7 +35,7 @@ async function getValidated<T>(path: string, schema: z.ZodType<T[]>): Promise<T[
 }
 
 export const openF1Provider = {
-  getSessions: () => getValidated("sessions?session_key=latest", listSchema(sessionSchema)),
+  getSessions: () => getValidated("sessions?meeting_key=latest", listSchema(sessionSchema)),
   getDrivers: (sessionKey: number) => getValidated(`drivers?session_key=${sessionKey}`, listSchema(driverSchema)),
   getPositions: (sessionKey: number) => getValidated(`position?session_key=${sessionKey}`, listSchema(positionSchema)),
   getLocations: (sessionKey: number, after: string | null = null) => getValidated(`location?${new URLSearchParams({ session_key: String(sessionKey), ...(after ? { "date>": after } : {}) })}`, listSchema(locationSchema)),

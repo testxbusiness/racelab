@@ -558,6 +558,7 @@ ship timing first.
 - [x] `TrackMap` uses SVG with local marker interpolation over 900ms. Favourite markers receive a ring, selected markers receive a label, and marker selection supports keyboard activation.
 - [x] Map polling is isolated inside `TrackMapPanel`, runs only while the Map view is mounted and the document is visible, and stops when the user switches away. Location errors render map-local unavailable/stale states without changing timing state.
 - [x] Added location schema, mapper, cursor-service, normalization, freshness, merge-bound, static-render, and map-marker tests. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (28 tests), and `npm run build`.
+- [x] Race-day hardening for the 23 Aug Dutch GP: the live loader now selects the scheduled `Race` session from the latest meeting timeline instead of assuming `session_key=latest` is the race; the Monza-only map is disabled for non-Monza circuits so Zandvoort timing cannot be paired with incorrect geometry. Validation now passes with 30 tests.
 
 ### Rendering decision
 
