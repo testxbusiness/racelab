@@ -35,14 +35,17 @@ function latestStintByDriver(stints: LiveStint[]): Map<number, LiveStint> {
 
 function raceStatus(events: LiveRaceControlEvent[], session: LiveSession, now: number): RaceStatus {
   if (session.dateEnd && Date.parse(session.dateEnd) <= now) return "ended";
-  const latest = [...events].sort((a, b) => b.sourceTimestamp.localeCompare(a.sourceTimestamp))[0];
-  const value = `${latest?.flag ?? ""} ${latest?.message ?? ""}`.toUpperCase();
-  if (value.includes("RED")) return "red-flag";
-  if (value.includes("VIRTUAL SAFETY CAR") || value.includes("VSC")) return "virtual-safety-car";
-  if (value.includes("SAFETY CAR") || value.includes("SC DEPLOYED")) return "safety-car";
-  if (value.includes("YELLOW") || value.includes("DOUBLE YELLOW")) return "yellow";
-  if (value.includes("GREEN") || events.length === 0) return "green";
-  return "unavailable";
+  const values = [...events]
+    .sort((a, b) => b.sourceTimestamp.localeCompare(a.sourceTimestamp))
+    .map((event) => `${event.flag ?? ""} ${event.message ?? ""}`.toUpperCase());
+  for (const value of values) {
+    if (value.includes("RED")) return "red-flag";
+    if (value.includes("VIRTUAL SAFETY CAR") || value.includes("VSC")) return "virtual-safety-car";
+    if (value.includes("SAFETY CAR") || value.includes("SC DEPLOYED")) return "safety-car";
+    if (value.includes("YELLOW") || value.includes("DOUBLE YELLOW")) return "yellow";
+    if (value.includes("GREEN") || value.includes("TRACK CLEAR")) return "green";
+  }
+  return "green";
 }
 
 export type LiveRaceInputs = {

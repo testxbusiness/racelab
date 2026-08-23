@@ -7,14 +7,18 @@ const sample = (driverNumber: number, x: number, y: number, date: string): LiveL
 
 describe("track location domain", () => {
   it("normalizes samples into the static map viewBox and expands bounds", () => {
-    const bounds = expandLocationBounds(null, [sample(1, 0, 0, "2026-08-23T12:00:00Z"), sample(2, 100, 200, "2026-08-23T12:00:01Z")]);
+    const bounds = expandLocationBounds(null, [sample(1, 1, 2, "2026-08-23T12:00:00Z"), sample(2, 101, 202, "2026-08-23T12:00:01Z")]);
     expect(bounds).not.toBeNull();
-    expect(normalizeLocationSample(sample(1, 0, 0, "2026-08-23T12:00:00Z"), bounds!)).toMatchObject({ x: 48, y: 712 });
+    expect(normalizeLocationSample(sample(1, 1, 2, "2026-08-23T12:00:00Z"), bounds!)).toMatchObject({ x: 48, y: 712 });
   });
   it("keeps only the latest sample per driver", () => {
     const old = "2026-08-23T12:00:00Z";
     const fresh = "2026-08-23T12:00:01Z";
     expect(mergeLatestLocationSamples([sample(1, 1, 1, old)], [sample(1, 2, 2, fresh), sample(2, 3, 3, fresh)])).toHaveLength(2);
+  });
+  it("drops OpenF1's zero-coordinate placeholders before rendering markers", () => {
+    const date = "2026-08-23T12:00:01Z";
+    expect(mergeLatestLocationSamples([], [sample(16, 0, 0, date), sample(1, 100, 200, date)])).toEqual([sample(1, 100, 200, date)]);
   });
   it("classifies map freshness without treating stale data as live", () => {
     const now = Date.parse("2026-08-23T12:00:20Z");

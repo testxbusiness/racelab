@@ -31,4 +31,14 @@ describe("LiveRaceState composer", () => {
     expect(calculateFreshness("2026-08-22T14:59:30.000Z", receivedAt, Date.parse(receivedAt)).status).toBe("stale");
     expect(deduplicateRaceControl([{ id: "a", sourceTimestamp: "2026-08-22T14:00:00Z", category: "Flag", message: null, flag: null, driverNumber: null, lapNumber: null }, { id: "a", sourceTimestamp: "2026-08-22T14:00:00Z", category: "Flag", message: null, flag: null, driverNumber: null, lapNumber: null }])).toHaveLength(1);
   });
+
+  it("keeps the live status green when the latest race-control message is informational", () => {
+    const state = composeLiveRaceState({
+      session: { key: 1, meetingKey: 2, name: "Race", type: "Race", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
+      drivers: [], positions: [], intervals: [], laps: [], stints: [],
+      raceControl: [{ id: "info", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Other", message: "PIT LANE OPEN", flag: null, driverNumber: null, lapNumber: null }],
+      streams, rateBudget, receivedAt,
+    }, Date.parse(receivedAt));
+    expect(state.raceStatus).toBe("green");
+  });
 });

@@ -560,6 +560,7 @@ ship timing first.
 - [x] Added location schema, mapper, cursor-service, normalization, freshness, merge-bound, static-render, and map-marker tests. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (28 tests), and `npm run build`.
 - [x] Race-day hardening for the 23 Aug Dutch GP: the live loader now selects the scheduled `Race` session from the latest meeting timeline instead of assuming `session_key=latest` is the race. Track geometry is selected by circuit for Monza and Zandvoort; unsupported circuits keep the map disabled so timing cannot be paired with incorrect geometry. Validation now passes with the full test suite.
 - [x] Added a locally calibrated Zandvoort SVG geometry from the live Dutch GP session `11353`, with circuit-specific coordinate bounds passed to the isolated location loader and a regression test for the Zandvoort renderer.
+- [x] Phase 5 closure after the Dutch GP live test: OpenF1 `(0,0)` location placeholders are filtered server-side and defensively excluded during marker merging; geometry bounds remain fixed for the active circuit instead of expanding during polling. This keeps live markers aligned with the preprocessed path. Informational race-control messages now preserve a green race state rather than displaying an incorrect unavailable status. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (33 tests), and `npm run build`.
 
 ### Rendering decision
 
@@ -567,7 +568,7 @@ SVG remains the chosen MVP renderer. The map has one static path and at most one
 
 ### Remaining risks
 
-- OpenF1 location coordinates are approximate and provider-specific; the static bounds were calibrated from captured Monza and Zandvoort samples and should be rechecked against future live sessions.
+- OpenF1 location coordinates are approximate and provider-specific; the static bounds were calibrated from captured Monza and Zandvoort samples and should be rechecked against future live sessions. Unsupported or materially changed coordinate systems keep the map disabled.
 - The recent-window bootstrap is intentionally bounded for live use; a future historical replay/map mode would need a separate explicitly paginated loader.
 
 ---

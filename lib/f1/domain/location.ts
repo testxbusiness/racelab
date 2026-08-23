@@ -7,9 +7,16 @@ export type NormalizedLocation = { driverNumber: number; x: number; y: number; s
 // Keeping them stable prevents live marker positions from rescaling every poll.
 export const MONZA_LOCATION_BOUNDS: LocationBounds = { minX: -1500, maxX: 11068, minY: -5801, maxY: 15882 };
 
+// OpenF1 uses the origin as a placeholder when a car has no usable GPS point.
+// The supported circuit coordinate systems do not pass through (0, 0).
+export function isUsableLocationSample(sample: LiveLocationSample): boolean {
+  return !(sample.x === 0 && sample.y === 0);
+}
+
 export function calculateLocationBounds(samples: LiveLocationSample[]): LocationBounds | null {
-  if (!samples.length) return null;
-  return { minX: Math.min(...samples.map((sample) => sample.x)), maxX: Math.max(...samples.map((sample) => sample.x)), minY: Math.min(...samples.map((sample) => sample.y)), maxY: Math.max(...samples.map((sample) => sample.y)) };
+  const usableSamples = samples.filter(isUsableLocationSample);
+  if (!usableSamples.length) return null;
+  return { minX: Math.min(...usableSamples.map((sample) => sample.x)), maxX: Math.max(...usableSamples.map((sample) => sample.x)), minY: Math.min(...usableSamples.map((sample) => sample.y)), maxY: Math.max(...usableSamples.map((sample) => sample.y)) };
 }
 
 export function expandLocationBounds(current: LocationBounds | null, samples: LiveLocationSample[]): LocationBounds | null {
@@ -28,6 +35,7 @@ export function normalizeLocationSample(sample: LiveLocationSample, bounds: Loca
 export function mergeLatestLocationSamples(current: LiveLocationSample[], incoming: LiveLocationSample[]): LiveLocationSample[] {
   const latest = new Map(current.map((sample) => [sample.driverNumber, sample]));
   for (const sample of incoming) {
+    if (!isUsableLocationSample(sample)) continue;
     const previous = latest.get(sample.driverNumber);
     if (!previous || sample.sourceTimestamp >= previous.sourceTimestamp) latest.set(sample.driverNumber, sample);
   }
