@@ -39,8 +39,8 @@ describe("Race Radar components", () => {
     expect(html).toContain('aria-label="Primary navigation"');
     expect(html).toContain('>Map<');
   });
-  it("can disable the Monza-only map without disabling the timing view", () => {
+  it("can disable the map for unsupported circuits without disabling the timing view", () => {
     const html = renderToStaticMarkup(<RadarViewTabs activeView="timing" onChange={() => undefined} mapAvailable={false} />);
-    expect(html).toContain('disabled=""'); expect(html).toContain("Track map available for Monza only");
+    expect(html).toContain('disabled=""'); expect(html).toContain("Track map unavailable for this circuit");
   });
 });

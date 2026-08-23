@@ -16,10 +16,11 @@ export function locationStatusFor(sourceTimestamp: string | null, now = Date.now
   return age <= 8_000 ? "live" : age <= 20_000 ? "delayed" : "stale";
 }
 
-export function useTrackMapData(sessionKey: number): MapData {
-  const [data, setData] = useState<MapData>({ samples: [], bounds: MONZA_LOCATION_BOUNDS, sourceTimestamp: null, status: "loading", error: null });
+export function useTrackMapData(sessionKey: number, coordinateBounds = MONZA_LOCATION_BOUNDS): MapData {
+  const [data, setData] = useState<MapData>({ samples: [], bounds: coordinateBounds, sourceTimestamp: null, status: "loading", error: null });
   useEffect(() => {
     let active = true;
+    setData({ samples: [], bounds: coordinateBounds, sourceTimestamp: null, status: "loading", error: null });
     let cursor: string | null = null;
     const storageKey = `racelab:location-cursor:${sessionKey}`;
     try { cursor = window.sessionStorage.getItem(storageKey); } catch { cursor = null; }
@@ -46,6 +47,6 @@ export function useTrackMapData(sessionKey: number): MapData {
     const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [sessionKey]);
+  }, [sessionKey, coordinateBounds]);
   return data;
 }

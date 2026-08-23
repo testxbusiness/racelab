@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { getTrackGeometry, type TrackGeometry } from "./track-geometries";
 import { MONZA_TRACK_PATH, MONZA_TRACK_VIEWBOX } from "./monza-track";
 
 export type TrackMarker = { driverNumber: number; acronym: string; teamColour: string | null; x: number; y: number };
@@ -9,7 +10,7 @@ function interpolate(from: TrackMarker, to: TrackMarker, progress: number): Trac
   return { ...to, x: from.x + (to.x - from.x) * progress, y: from.y + (to.y - from.y) * progress };
 }
 
-export function TrackMap({ markers, favouriteDriverNumber, selectedDriverNumber, onSelectDriver }: { markers: TrackMarker[]; favouriteDriverNumber: number | null; selectedDriverNumber: number | null; onSelectDriver: (driverNumber: number) => void }) {
+export function TrackMap({ markers, favouriteDriverNumber, selectedDriverNumber, onSelectDriver, geometry = getTrackGeometry("Monza") ?? { circuit: "Monza", viewBox: MONZA_TRACK_VIEWBOX, path: MONZA_TRACK_PATH, bounds: { minX: 0, maxX: 1, minY: 0, maxY: 1 } } }: { markers: TrackMarker[]; favouriteDriverNumber: number | null; selectedDriverNumber: number | null; onSelectDriver: (driverNumber: number) => void; geometry?: TrackGeometry }) {
   const [renderedMarkers, setRenderedMarkers] = useState(markers);
   const previousMarkers = useRef(markers);
   useEffect(() => {
@@ -26,9 +27,9 @@ export function TrackMap({ markers, favouriteDriverNumber, selectedDriverNumber,
     return () => cancelAnimationFrame(frame);
   }, [markers]);
 
-  return <svg className="track-map-svg" viewBox={MONZA_TRACK_VIEWBOX} role="group" aria-label="Monza track map">
-    <path className="track-map-shadow" d={MONZA_TRACK_PATH} />
-    <path className="track-map-path" d={MONZA_TRACK_PATH} />
+  return <svg className="track-map-svg" viewBox={geometry.viewBox} role="group" aria-label={`${geometry.circuit} track map`}>
+    <path className="track-map-shadow" d={geometry.path} />
+    <path className="track-map-path" d={geometry.path} />
     {renderedMarkers.map((marker) => {
       const favourite = marker.driverNumber === favouriteDriverNumber;
       const selected = marker.driverNumber === selectedDriverNumber;
