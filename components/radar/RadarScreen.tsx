@@ -6,6 +6,8 @@ import { EventFeed } from "./EventFeed";
 import { Leaderboard } from "./Leaderboard";
 import { LiveHeader } from "./LiveHeader";
 import { RaceStatus } from "./RaceStatus";
+import { RadarNav } from "./RadarNav";
+import { RadarViewTabs } from "./RadarViewTabs";
 
 type ApiResult = { ok: true; state: LiveRaceState } | { ok: false; error: string };
 
@@ -35,5 +37,5 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
     return () => { window.clearInterval(timer); window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, [state]);
 
-  return <main className="radar-page"><div className="radar-shell"><div className="brand-row"><span className="brand-mark">RL</span><span>RACELAB / RACE RADAR</span></div>{state ? <><LiveHeader state={state} reconnecting={reconnecting} offline={offline} /><div className="refresh-notice" aria-live="polite">{error ? `Showing last valid timing · ${error}` : reconnecting ? "Checking for a newer timing state…" : "Live timing refreshes automatically"}</div><RaceStatus state={state} /><Leaderboard timing={state.timing} /><EventFeed events={state.raceControl} /></> : <section className="unavailable-card"><span className="unavailable-icon" aria-hidden="true">!</span><h1>Live timing unavailable</h1><p>{error ?? "The provider did not return a session. Race Radar will retry automatically."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></section>}</div></main>;
+  return <main className="radar-page"><div className="radar-shell">{state ? <><LiveHeader state={state} reconnecting={reconnecting} offline={offline} /><RadarViewTabs /><div className="refresh-notice" aria-live="polite">{error ? `Showing last valid timing · ${error}` : reconnecting ? "Checking for a newer timing state…" : "Live timing refreshes automatically"}</div><div id="timing"><RaceStatus state={state} /><Leaderboard timing={state.timing} /></div><div id="events"><EventFeed events={state.raceControl} /></div></> : <section className="unavailable-card"><span className="unavailable-icon" aria-hidden="true">!</span><h1>Live timing unavailable</h1><p>{error ?? "The provider did not return a session. Race Radar will retry automatically."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></section>}<RadarNav /></div></main>;
 }

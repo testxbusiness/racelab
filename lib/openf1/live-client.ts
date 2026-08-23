@@ -7,9 +7,12 @@ type Token = { value: string; expiresAt: number };
 let token: Token | undefined;
 let tokenPromise: Promise<string> | undefined;
 const requestTimes: number[] = [];
-type EndpointMetric = { count: number; lastStatus: number | null; lastLatencyMs: number | null; lastPayloadBytes: number | null };
+type EndpointMetric = { count: number; lastStatus: number | null; lastLatencyMs: number | null; lastPayloadBytes: number | null; lastRecordCount: number | null; validationFailures: number; lastSourceTimestamp: string | null };
 const endpointMetrics = new Map<string, EndpointMetric>();
 let authRefreshes = 0;
+
+const emptyMetric = (): EndpointMetric => ({ count: 0, lastStatus: null, lastLatencyMs: null, lastPayloadBytes: null, lastRecordCount: null, validationFailures: 0, lastSourceTimestamp: null });
+const endpointName = (path: string) => path.split("?")[0] ?? path;
 
 async function authenticate(): Promise<string> {
   const env = getOpenF1Env();
@@ -35,17 +38,31 @@ export async function openF1Fetch(path: string, init?: RequestInit, retried = fa
   headers.set("accept", "application/json");
   headers.set("authorization", `Bearer ${await getToken(retried)}`);
   const startedAt = Date.now();
-  const endpoint = path.split("?")[0] ?? path;
+  const endpoint = endpointName(path);
   requestTimes.push(startedAt);
   const response = await fetch(`${env.OPENF1_API_URL}/${path.replace(/^\//, "")}`, { ...init, headers, cache: "no-store" });
-  const previous = endpointMetrics.get(endpoint) ?? { count: 0, lastStatus: null, lastLatencyMs: null, lastPayloadBytes: null };
-  endpointMetrics.set(endpoint, { count: previous.count + 1, lastStatus: response.status, lastLatencyMs: Date.now() - startedAt, lastPayloadBytes: Number(response.headers.get("content-length")) || null });
+  const previous = endpointMetrics.get(endpoint) ?? emptyMetric();
+  endpointMetrics.set(endpoint, { ...previous, count: previous.count + 1, lastStatus: response.status, lastLatencyMs: Date.now() - startedAt, lastPayloadBytes: Number(response.headers.get("content-length")) || null });
   if (response.status === 401 && !retried) { authRefreshes += 1; token = undefined; return openF1Fetch(path, init, true); }
   // OpenF1 uses 404 with { detail: "No results found." } for valid empty queries.
   // The provider validates that response and maps it to an empty collection.
   if (response.status === 404) return response;
   if (!response.ok) throw new ProviderError("http", `OpenF1 request failed (${response.status})`, endpoint, response.status);
   return response;
+}
+
+export function recordOpenF1ProviderResult(path: string, recordCount: number, sourceTimestamp: string | null) {
+  const endpoint = endpointName(path);
+  const previous = endpointMetrics.get(endpoint) ?? emptyMetric();
+  endpointMetrics.set(endpoint, { ...previous, lastRecordCount: recordCount, lastSourceTimestamp: sourceTimestamp });
+  console.info(JSON.stringify({ component: "openf1", event: "response_validated", endpoint, recordCount, sourceTimestamp }));
+}
+
+export function recordOpenF1ValidationFailure(path: string, issueCount: number) {
+  const endpoint = endpointName(path);
+  const previous = endpointMetrics.get(endpoint) ?? emptyMetric();
+  endpointMetrics.set(endpoint, { ...previous, validationFailures: previous.validationFailures + 1 });
+  console.error(JSON.stringify({ component: "openf1", event: "validation_failed", endpoint, issueCount }));
 }
 
 export const resetTokenForTests = () => { token = undefined; tokenPromise = undefined; requestTimes.length = 0; endpointMetrics.clear(); authRefreshes = 0; };

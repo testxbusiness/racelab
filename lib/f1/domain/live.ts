@@ -42,7 +42,8 @@ export type LiveDriverTiming = {
 
 export type StreamHealth = { status: "fresh" | "fallback" | "unavailable"; receivedAt: string; sourceTimestamp: string | null; error: string | null };
 
-export type RateBudget = { requestsLast60Seconds: number; maxRequestsPerMinute: number; usageRatio: number; warning: "none" | "warning" | "critical" | "near_limit"; endpoints: Record<string, { count: number; lastStatus: number | null; lastLatencyMs: number | null; lastPayloadBytes: number | null }> };
+export type EndpointMetric = { count: number; lastStatus: number | null; lastLatencyMs: number | null; lastPayloadBytes: number | null; lastRecordCount: number | null; validationFailures: number; lastSourceTimestamp: string | null };
+export type RateBudget = { requestsLast60Seconds: number; maxRequestsPerMinute: number; usageRatio: number; warning: "none" | "warning" | "critical" | "near_limit"; authRefreshes: number; endpoints: Record<string, EndpointMetric> };
 
 export type LiveRaceState = {
   session: LiveSession;

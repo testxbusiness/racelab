@@ -5,12 +5,14 @@ import { EventFeed } from "@/components/radar/EventFeed";
 import { Leaderboard } from "@/components/radar/Leaderboard";
 import { LiveHeader } from "@/components/radar/LiveHeader";
 import { RaceStatus } from "@/components/radar/RaceStatus";
+import { RadarNav } from "@/components/radar/RadarNav";
+import { RadarViewTabs } from "@/components/radar/RadarViewTabs";
 import type { LiveRaceState } from "@/lib/f1/domain/live";
 
 const state: LiveRaceState = {
   session: { key: 1, meetingKey: 2, name: "Italian Grand Prix", type: "Race", countryName: "Italy", circuitName: "Monza", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
   lapNumber: 37, totalLaps: 53, raceStatus: "yellow", timing: [{ driver: { number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }, position: 2, gapToLeader: 1.842, interval: 1.842, compound: "MEDIUM", tyreAge: 9, inPit: null, retired: null, sourceTimestamp: "2026-08-22T14:59:58.000Z" }],
-  raceControl: [{ id: "event", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "YELLOW FLAG", flag: "YELLOW", driverNumber: null, lapNumber: 37 }], freshness: { sourceTimestamp: "2026-08-22T14:59:58.000Z", receivedAt: "2026-08-22T15:00:00.000Z", ageMs: 2000, status: "live" }, streams: {} as LiveRaceState["streams"], rateBudget: { requestsLast60Seconds: 1, maxRequestsPerMinute: 60, usageRatio: 0.01, warning: "none", endpoints: {} }, updatedAt: "2026-08-22T15:00:00.000Z",
+  raceControl: [{ id: "event", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "YELLOW FLAG", flag: "YELLOW", driverNumber: null, lapNumber: 37 }], freshness: { sourceTimestamp: "2026-08-22T14:59:58.000Z", receivedAt: "2026-08-22T15:00:00.000Z", ageMs: 2000, status: "live" }, streams: {} as LiveRaceState["streams"], rateBudget: { requestsLast60Seconds: 1, maxRequestsPerMinute: 60, usageRatio: 0.01, warning: "none", authRefreshes: 0, endpoints: {} }, updatedAt: "2026-08-22T15:00:00.000Z",
 };
 
 describe("Race Radar components", () => {
@@ -26,5 +28,12 @@ describe("Race Radar components", () => {
     expect(renderToStaticMarkup(<RaceStatus state={state} />)).toContain("YELLOW FLAG");
     expect(renderToStaticMarkup(<RaceStatus state={{ ...state, raceStatus: "red-flag" }} />)).toContain("RED FLAG");
     expect(renderToStaticMarkup(<EventFeed events={state.raceControl} />)).toContain("LAP 37");
+  });
+  it("keeps the mobile shell navigable without pretending future screens exist", () => {
+    const html = renderToStaticMarkup(<><RadarNav /><RadarViewTabs /></>);
+    expect(html).toContain('href="/radar"');
+    expect(html).toContain('aria-label="Primary navigation"');
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).toContain('href="#events"');
   });
 });

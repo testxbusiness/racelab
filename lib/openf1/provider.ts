@@ -1,15 +1,36 @@
 import "server-only";
 import { z } from "zod";
 import { emptyResultSchema, listSchema, driverSchema, intervalSchema, lapSchema, positionSchema, raceControlSchema, sessionSchema, stintSchema, type OpenF1Driver, type OpenF1Interval, type OpenF1Lap, type OpenF1Position, type OpenF1RaceControl, type OpenF1Session, type OpenF1Stint } from "./schemas";
-import { openF1Fetch } from "./live-client";
+import { openF1Fetch, recordOpenF1ProviderResult, recordOpenF1ValidationFailure } from "./live-client";
 import { ProviderError } from "./errors";
+
+function latestSourceTimestamp(records: unknown[]): string | null {
+  const timestamps: string[] = [];
+  for (const record of records) {
+    if (typeof record !== "object" || record === null) continue;
+    const fields = record as Record<string, unknown>;
+    for (const key of ["date", "date_start", "date_end"]) {
+      const value = fields[key];
+      if (typeof value === "string") timestamps.push(value);
+    }
+  }
+  return timestamps.sort().at(-1) ?? null;
+}
 
 async function getValidated<T>(path: string, schema: z.ZodType<T[]>): Promise<T[]> {
   const response = await openF1Fetch(path);
   const payload: unknown = await response.json();
-  if (emptyResultSchema.safeParse(payload).success) return [];
+  if (emptyResultSchema.safeParse(payload).success) {
+    recordOpenF1ProviderResult(path, 0, null);
+    return [];
+  }
   const parsed = schema.safeParse(payload);
-  if (!parsed.success) throw new ProviderError("validation", `OpenF1 payload validation failed for ${path}`, path, 502);
+  if (!parsed.success) {
+    recordOpenF1ValidationFailure(path, parsed.error.issues.length);
+    throw new ProviderError("validation", `OpenF1 payload validation failed for ${path}`, path, 502);
+  }
+  const sourceTimestamp = latestSourceTimestamp(parsed.data);
+  recordOpenF1ProviderResult(path, parsed.data.length, sourceTimestamp);
   return parsed.data;
 }
 

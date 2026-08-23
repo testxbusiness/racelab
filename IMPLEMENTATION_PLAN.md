@@ -322,6 +322,11 @@ Essere pronti a interrogare OpenF1 Live prima della gara di Zandvoort.
 - telemetry;
 - PWA refinement.
 
+### Phase 0 verification note — 23 Aug 2026
+
+- [x] Restored the environment-gated raw diagnostic page at `/diagnostics`; it is hidden with a 404 when `OPENF1_DIAGNOSTICS_ENABLED` is false.
+- [x] The screen exposes session key, lap, driver count, source timestamp, received time, data age, requests/minute, auth refreshes, last provider error, and per-endpoint metrics.
+
 ---
 
 # PHASE 1 — 23 AUG — ZANDVOORT LIVE PROOF
@@ -375,6 +380,14 @@ Capture:
 
 Record actual findings inside `IMPLEMENTATION_PLAN.md`.
 
+### Production verification findings — 23 Aug 2026
+
+- [x] `GET /api/openf1/live` returned HTTP 200 from Vercel and a composed Netherlands Qualifying state (session key `11349`, 22 drivers, lap 25, race-control events).
+- [x] Server-side auth remains private; automated coverage verifies one bearer token is reused across provider requests and refreshed once after a 401.
+- [x] Source timestamps, received timestamps, data age, request rate, endpoint status, latency, payload bytes, record count, validation failures, and auth refreshes are available in the protected diagnostics view and structured Vercel logs.
+- [x] Observed a real `429` for `laps`; the stream degraded independently while timing remained available. This validates the fallback path and should inform Phase 7 backoff work.
+- [ ] A 10-minute observation during an active session is still required to validate live latency, update frequency, and rate-limit behaviour under sustained race conditions. The 23 Aug production request occurred after the session and correctly reported `stale`/`ended` data.
+
 ---
 
 # PHASE 2 — 24–25 AUG — DATA LAYER HARDENING
@@ -411,6 +424,13 @@ weather       60s
 Location is not yet active.
 
 Adjust after measured behaviour.
+
+### Polling implementation note — 22 Aug 2026
+
+- [x] Applied per-stream refresh windows in `createLiveStateLoader` with cached data and cached stream health.
+- [x] Position and intervals refresh every 6s; race control every 10s; laps every 15s; stints every 30s; session and drivers every 30s.
+- [x] A `/radar` refresh still occurs every 6s, but only streams whose window has elapsed call OpenF1. Last valid stream data remains available between refreshes and after endpoint failures.
+- [x] Added fake-clock integration coverage for stream-specific polling and fallback retention.
 
 ---
 
@@ -453,6 +473,13 @@ On iPhone portrait:
 - OpenF1 live session status and total-lap availability should be verified during the next real-session rehearsal. If exposed, map them into the existing domain rather than changing the UI boundary.
 - Pit/retired flags remain intentionally nullable until a supported provider stream is added; this is acceptable for the “where available” requirement.
 - Next phase: Focus Driver, without adding track map or telemetry to the timing screen.
+
+### UI/UX refinement — 22 Aug 2026
+
+- [x] Added the project visual direction from `design_test` to the live shell: technical HUD treatment, 4px rhythm, high-contrast surfaces, team-accent timing rows, circular tyre chips, tabular timing hierarchy, and mobile bottom navigation.
+- [x] Replaced the diagnostics-first root page with a product entry screen linking directly to `/radar`.
+- [x] Kept Map, Weekend, Focus, and Settings visibly represented but non-functional until their planned phases; no static driver or track data was introduced.
+- [x] Added accessible focus states, inline SVG navigation icons, reduced-motion support, and render coverage for the new shell.
 
 ---
 

@@ -5,7 +5,7 @@ const receivedAt = "2026-08-22T15:00:00.000Z";
 const streams = {
   session: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, drivers: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, position: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:58.000Z", error: null }, intervals: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:57.000Z", error: null }, laps: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, stints: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, raceControl: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:59.000Z", error: null },
 };
-const rateBudget = { requestsLast60Seconds: 6, maxRequestsPerMinute: 60, usageRatio: 0.1, warning: "none" as const, endpoints: {} };
+const rateBudget = { requestsLast60Seconds: 6, maxRequestsPerMinute: 60, usageRatio: 0.1, warning: "none" as const, authRefreshes: 0, endpoints: {} };
 
 describe("LiveRaceState composer", () => {
   it("composes timing, latest stint data, and deduplicated race control", () => {

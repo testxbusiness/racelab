@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { emptyResultSchema, intervalSchema, lapSchema, positionSchema, raceControlSchema, stintSchema } from "@/lib/openf1/schemas";
-import { getRateBudgetSnapshot, openF1Fetch, resetTokenForTests } from "@/lib/openf1/live-client";
+import { getRateBudgetSnapshot, openF1Fetch, recordOpenF1ProviderResult, recordOpenF1ValidationFailure, resetTokenForTests } from "@/lib/openf1/live-client";
 
 describe("OpenF1 Phase 1 schemas", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); resetTokenForTests(); });
@@ -34,5 +34,11 @@ describe("OpenF1 Phase 1 schemas", () => {
     const headers = fetchMock.mock.calls[1]?.[1]?.headers;
     expect(new Headers(headers).get("authorization")).toBe("Bearer secret-token");
     expect(getRateBudgetSnapshot(2).warning).toBe("near_limit");
+  });
+
+  it("captures provider record counts and validation failures without logging payloads", () => {
+    recordOpenF1ProviderResult("position?session_key=1", 20, "2026-08-23T12:00:00+00:00");
+    recordOpenF1ValidationFailure("position?session_key=1", 2);
+    expect(getRateBudgetSnapshot().endpoints.position).toMatchObject({ lastRecordCount: 20, lastSourceTimestamp: "2026-08-23T12:00:00+00:00", validationFailures: 1 });
   });
 });
