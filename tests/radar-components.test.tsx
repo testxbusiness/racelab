@@ -33,11 +33,10 @@ describe("Race Radar components", () => {
     expect(renderToStaticMarkup(<RaceStatus state={{ ...state, raceStatus: "red-flag" }} />)).toContain("RED FLAG");
     expect(renderToStaticMarkup(<EventFeed events={state.raceControl} />)).toContain("LAP 37");
   });
-  it("keeps the mobile shell navigable without pretending future screens exist", () => {
-    const html = renderToStaticMarkup(<><RadarNav /><RadarViewTabs /></>);
+  it("keeps the mobile shell navigable with timing, map, and events views", () => {
+    const html = renderToStaticMarkup(<><RadarNav /><RadarViewTabs activeView="timing" onChange={() => undefined} /></>);
     expect(html).toContain('href="/radar"');
     expect(html).toContain('aria-label="Primary navigation"');
-    expect(html).toContain('aria-disabled="true"');
-    expect(html).toContain('href="#events"');
+    expect(html).toContain('>Map<');
   });
 });

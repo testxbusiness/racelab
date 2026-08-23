@@ -17,6 +17,10 @@ export const positionSchema = z.object({
   date, driver_number: z.number(), position: z.number(), session_key: z.number(),
 }).passthrough();
 
+export const locationSchema = z.object({
+  date, driver_number: z.number(), session_key: z.number(), x: z.number(), y: z.number(), z: z.number(),
+}).passthrough();
+
 export const intervalSchema = z.object({
   date, driver_number: z.number(), session_key: z.number(), interval: z.number().nullable(),
   gap_to_leader: z.number().nullable(),
@@ -43,6 +47,7 @@ export const listSchema = <T extends z.ZodType>(item: T) => z.array(item);
 export type OpenF1Session = z.infer<typeof sessionSchema>;
 export type OpenF1Driver = z.infer<typeof driverSchema>;
 export type OpenF1Position = z.infer<typeof positionSchema>;
+export type OpenF1Location = z.infer<typeof locationSchema>;
 export type OpenF1Interval = z.infer<typeof intervalSchema>;
 export type OpenF1RaceControl = z.infer<typeof raceControlSchema>;
 export type OpenF1Lap = z.infer<typeof lapSchema>;

@@ -521,14 +521,14 @@ Validate map from real/historical location data.
 
 ### Technical research
 
-- [ ] inspect location coordinate system.
-- [ ] retrieve one complete historical session sample.
-- [ ] derive circuit path.
-- [ ] normalise x/y.
-- [ ] rotate/scale.
-- [ ] render Monza SVG path.
-- [ ] render driver dots.
-- [ ] interpolation prototype.
+- [x] inspect location coordinate system.
+- [x] retrieve one complete historical session sample.
+- [x] derive circuit path.
+- [x] normalise x/y.
+- [x] rotate/scale.
+- [x] render Monza SVG path.
+- [x] render driver dots.
+- [x] interpolation prototype.
 
 ### Location query rule
 
@@ -540,15 +540,33 @@ Only fetch delta.
 
 ### Performance
 
-- [ ] location state isolated.
-- [ ] map updates do not rerender leaderboard.
-- [ ] map can be disabled completely.
+- [x] location state isolated.
+- [x] map updates do not rerender leaderboard.
+- [x] map can be disabled completely.
 
 ### Gate
 
 If map jeopardises reliability:
 
 ship timing first.
+
+### Phase 5 implementation findings — 23 Aug 2026
+
+- [x] OpenF1 `location` is now validated with Zod, mapped into `LiveLocationSample`, and exposed through a separate server-only location service and route. It is intentionally not added to `LiveRaceState`, keeping timing composition unchanged.
+- [x] Live map bootstrap requests only a recent 15-second window. Subsequent requests use `date>` with a `lastLocationTimestamp` cursor persisted in sessionStorage per session; remounting the map does not request full session history again.
+- [x] A complete public 2025 Monza lap (session `9912`, driver `1`, lap `1`) was preprocessed into a simplified normalized SVG path. The static path and captured coordinate bounds are stored locally and are not rebuilt during live use.
+- [x] `TrackMap` uses SVG with local marker interpolation over 900ms. Favourite markers receive a ring, selected markers receive a label, and marker selection supports keyboard activation.
+- [x] Map polling is isolated inside `TrackMapPanel`, runs only while the Map view is mounted and the document is visible, and stops when the user switches away. Location errors render map-local unavailable/stale states without changing timing state.
+- [x] Added location schema, mapper, cursor-service, normalization, freshness, merge-bound, static-render, and map-marker tests. Validation passed: `npm run lint`, `npm run typecheck`, `npm test` (28 tests), and `npm run build`.
+
+### Rendering decision
+
+SVG remains the chosen MVP renderer. The map has one static path and at most one marker per live driver; no profiling evidence justifies Canvas. Canvas can be reconsidered only if marker count or post-Monza telemetry creates a measured rendering bottleneck.
+
+### Remaining risks
+
+- OpenF1 location coordinates are approximate and provider-specific; the static bounds were calibrated from a 2025 Monza lap and should be rechecked against the first live Monza session.
+- The recent-window bootstrap is intentionally bounded for live use; a future historical replay/map mode would need a separate explicitly paginated loader.
 
 ---
 
@@ -1097,7 +1115,7 @@ Do not start Track Map until the live provider proof has succeeded.
 - The public repository `https://github.com/testxbusiness/racelab` was initially empty. The GitHub connector rejected content writes with `403 Resource not accessible by integration`, but CLI authentication later succeeded and the source was pushed.
 - GitHub CLI authentication and push are now complete: commit `4f73c72` is on `main` in `testxbusiness/racelab`.
 - Vercel production deployment is READY at `https://racelab-dusky.vercel.app` and has returned authenticated, validated live data after the OpenF1 secrets were configured.
-- Track Map, telemetry, PWA refinement, and all post-Monza features remain intentionally untouched.
+- Telemetry, PWA refinement, and all post-Monza features remain intentionally untouched; Phase 5 Track Map is now an isolated secondary SVG view.
 
 ---
 

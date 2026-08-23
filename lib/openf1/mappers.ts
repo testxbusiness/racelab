@@ -1,9 +1,10 @@
-import type { LiveDriver, LiveInterval, LiveLap, LivePosition, LiveRaceControlEvent, LiveSession, LiveStint } from "@/lib/f1/domain/live";
-import type { OpenF1Driver, OpenF1Interval, OpenF1Lap, OpenF1Position, OpenF1RaceControl, OpenF1Session, OpenF1Stint } from "./schemas";
+import type { LiveDriver, LiveInterval, LiveLap, LiveLocationSample, LivePosition, LiveRaceControlEvent, LiveSession, LiveStint } from "@/lib/f1/domain/live";
+import type { OpenF1Driver, OpenF1Interval, OpenF1Lap, OpenF1Location, OpenF1Position, OpenF1RaceControl, OpenF1Session, OpenF1Stint } from "./schemas";
 
 export const mapSession = (value: OpenF1Session): LiveSession => ({ key: value.session_key, meetingKey: value.meeting_key, name: value.session_name, type: value.session_type, countryName: value.country_name ?? null, circuitName: value.circuit_short_name ?? null, dateStart: value.date_start ?? null, dateEnd: value.date_end ?? null });
 export const mapDriver = (value: OpenF1Driver): LiveDriver => ({ number: value.driver_number, fullName: value.full_name, acronym: value.name_acronym, teamName: value.team_name ?? null, teamColour: value.team_colour ?? null });
 export const mapPosition = (value: OpenF1Position): LivePosition => ({ driverNumber: value.driver_number, position: value.position, sourceTimestamp: value.date });
+export const mapLocation = (value: OpenF1Location): LiveLocationSample => ({ driverNumber: value.driver_number, x: value.x, y: value.y, z: value.z, sourceTimestamp: value.date });
 export const mapInterval = (value: OpenF1Interval): LiveInterval => ({ driverNumber: value.driver_number, interval: value.interval, gapToLeader: value.gap_to_leader, sourceTimestamp: value.date });
 export const mapLap = (value: OpenF1Lap): LiveLap => ({ driverNumber: value.driver_number, lapNumber: value.lap_number, durationSeconds: value.lap_duration ?? (value.date_start && value.date_end ? (Date.parse(value.date_end) - Date.parse(value.date_start)) / 1000 : null), sourceTimestamp: value.date ?? value.date_start ?? null });
 export const mapStint = (value: OpenF1Stint): LiveStint => ({ driverNumber: value.driver_number, stintNumber: value.stint_number, compound: value.compound, lapStart: value.lap_start, lapEnd: value.lap_end, tyreAgeAtStart: value.tyre_age_at_start });

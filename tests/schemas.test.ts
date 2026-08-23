@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { emptyResultSchema, intervalSchema, lapSchema, positionSchema, raceControlSchema, stintSchema } from "@/lib/openf1/schemas";
+import { emptyResultSchema, intervalSchema, lapSchema, locationSchema, positionSchema, raceControlSchema, stintSchema } from "@/lib/openf1/schemas";
 import { getRateBudgetSnapshot, openF1Fetch, recordOpenF1ProviderResult, recordOpenF1ValidationFailure, resetTokenForTests } from "@/lib/openf1/live-client";
 
 describe("OpenF1 Phase 1 schemas", () => {
@@ -19,6 +19,10 @@ describe("OpenF1 Phase 1 schemas", () => {
   });
   it("validates stints used by the live composer", () => {
     expect(stintSchema.parse({ compound: "MEDIUM", driver_number: 16, lap_end: 20, lap_start: 5, meeting_key: 2, session_key: 1, stint_number: 2, tyre_age_at_start: 3 }).compound).toBe("MEDIUM");
+  });
+  it("validates location coordinates and timestamps", () => {
+    expect(locationSchema.parse({ date: "2026-08-23T12:00:00+00:00", driver_number: 16, session_key: 1, x: 10, y: 20, z: 30 }).x).toBe(10);
+    expect(locationSchema.safeParse({ date: "not-a-date", driver_number: 16, session_key: 1, x: 10, y: 20, z: 30 }).success).toBe(false);
   });
 
   it("authenticates server-side once and reuses the bearer token", async () => {

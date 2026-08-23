@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapDriver, mapRaceControl, mapStint } from "@/lib/openf1/mappers";
+import { mapDriver, mapLocation, mapRaceControl, mapStint } from "@/lib/openf1/mappers";
 
 describe("OpenF1 response mappers", () => {
   it("maps provider names into the RaceLab domain without provider extras", () => {
@@ -9,5 +9,8 @@ describe("OpenF1 response mappers", () => {
   it("creates stable race-control ids and tyre state", () => {
     expect(mapRaceControl({ date: "2026-08-22T15:00:00+00:00", session_key: 1, category: "Flag", message: "GREEN FLAG", flag: "GREEN", driver_number: null, lap_number: 12 }).id).toContain("GREEN FLAG");
     expect(mapStint({ compound: "MEDIUM", driver_number: 16, lap_end: 20, lap_start: 5, meeting_key: 2, session_key: 1, stint_number: 2, tyre_age_at_start: 3 })).toMatchObject({ driverNumber: 16, compound: "MEDIUM", tyreAgeAtStart: 3 });
+  });
+  it("maps location coordinates into the domain", () => {
+    expect(mapLocation({ date: "2026-08-23T12:00:00+00:00", driver_number: 16, session_key: 1, x: 10, y: 20, z: 30 })).toEqual({ driverNumber: 16, x: 10, y: 20, z: 30, sourceTimestamp: "2026-08-23T12:00:00+00:00" });
   });
 });

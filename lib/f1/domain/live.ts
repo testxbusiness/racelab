@@ -25,6 +25,7 @@ export type LiveDriver = { number: number; fullName: string; acronym: string; te
 export type LivePosition = { driverNumber: number; position: number; sourceTimestamp: string };
 export type LiveInterval = { driverNumber: number; interval: number | null; gapToLeader: number | null; sourceTimestamp: string };
 export type LiveLap = { driverNumber: number; lapNumber: number; durationSeconds: number | null; sourceTimestamp: string | null };
+export type LiveLocationSample = { driverNumber: number; x: number; y: number; z: number; sourceTimestamp: string };
 export type LiveStint = { driverNumber: number; stintNumber: number; compound: string; lapStart: number; lapEnd: number; tyreAgeAtStart: number };
 export type LiveRaceControlEvent = { id: string; sourceTimestamp: string; category: string; message: string | null; flag: string | null; driverNumber: number | null; lapNumber: number | null };
 
