@@ -86,4 +86,23 @@ describe("live polling resilience", () => {
     await Promise.resolve();
     expect(harness.delays()).toEqual([6_000]);
   });
+
+  it("cancels all future timers when the fetched session is not live", async () => {
+    const harness = createScheduler();
+    const statuses: LivePollingStatus[] = [];
+    const controller = createLivePollingController<{ lifecycle: "ENDED"; polling: { enabled: false; activeGroups: never[] } }>({
+      fetchState: vi.fn().mockResolvedValue({ lifecycle: "ENDED", polling: { enabled: false, activeGroups: [] } }),
+      onState: () => undefined,
+      onError: () => undefined,
+      onStatus: (status) => statuses.push(status),
+      getPollingPolicy: (state) => ({ lifecycle: state.lifecycle, policy: state.polling }),
+      scheduler: harness.scheduler,
+      isOnline: () => true,
+      isVisible: () => true,
+    });
+    controller.start();
+    await harness.runNext();
+    expect(harness.delays()).toEqual([]);
+    expect(statuses.at(-1)).toMatchObject({ lifecycle: "ENDED", pollingEnabled: false, activePollingGroups: [] });
+  });
 });

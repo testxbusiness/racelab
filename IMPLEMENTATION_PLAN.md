@@ -697,6 +697,43 @@ DevTools:
 
 ---
 
+# PHASE 7.5 — 23 AUG — SESSION-AWARE POLLING AND FINAL SESSION STATE
+
+## Goal
+
+Stop all live stream polling when a session is no longer live, preserve the final timing state, and keep session status semantically correct across delayed, red-flagged, upcoming, and reopened sessions.
+
+### Implemented behaviour
+
+- [x] Added the central `UPCOMING` / `LIVE` / `FINALIZING` / `ENDED` lifecycle in `lib/f1/domain/session-lifecycle.ts`.
+- [x] Existing race-control/session-status detection remains primary. `date_start` and `date_end` are fallback schedule signals only; an active yellow, safety-car, VSC, red-flag, green, or resumed-session signal prevents premature termination after `date_end`.
+- [x] Central polling policy enables all live groups only for `LIVE`; `position`, `intervals`, `raceControl`, `laps`, `stints`, `pit`, `weather`, and `location` are disabled for upcoming/finalizing/ended states.
+- [x] Server loader previews lifecycle before fetching live streams and returns cached/composed final timing without requesting live endpoints when polling is disabled.
+- [x] Client polling controller consumes the returned policy, cancels scheduled timers after a non-live state, and exposes lifecycle/polling groups in diagnostics.
+- [x] Track Map now receives the same lifecycle and unmounts its location interval outside `LIVE`.
+- [x] Ended/finalizing/upcoming states use final/no-age freshness semantics; Race Radar hides data age and live retry controls for ended sessions while retaining the last valid timing.
+- [x] Added migration for older last-known PWA state envelopes that predate lifecycle/polling fields.
+- [x] No `session_result` endpoint is used; therefore no unbounded final-results retry loop exists. `FINALIZING` is bounded by the configured 30-second schedule grace before `ENDED`.
+
+### Tests and verification
+
+- [x] Upcoming session → zero live stream calls.
+- [x] Live session → normal polling groups and cadence.
+- [x] Live → ended transition → stream calls stop.
+- [x] Ended → no stale freshness and no future client timer.
+- [x] Delayed/yellow and red-flagged session past scheduled `date_end` remains `LIVE`.
+- [x] Reopened ended session → final state retained with no live stream calls.
+- [x] `npm test` — 56 tests passing.
+- [x] `npm run lint`, `npm run typecheck`, and `npm run build` passing.
+
+### Decisions and remaining risks
+
+- `sessions?meeting_key=latest` may still be queried on an explicit page/API reopen to discover a new weekend session; it is schedule discovery, not a live stream. The client has no recurring timer for upcoming/ended sessions.
+- Official `session_result` retrieval remains out of scope because the current provider abstraction does not expose it; final timing is the last validated composed live state.
+- A sustained real-session observation should confirm the provider's terminal race-control message and schedule lag patterns; the safety-first fallback keeps red-flagged sessions live until a terminal signal or grace expiry.
+
+---
+
 # PHASE 8 — 2 SEP — OUTDOOR + POWER
 
 ## Goal

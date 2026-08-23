@@ -7,7 +7,7 @@ import { createLivePollingController, type LivePollingMode, type LivePollingStat
 type ApiResult = { ok: true; state: LiveRaceState } | { ok: false; error: string };
 
 export function useLiveRacePolling({ mode, onState, onError }: { mode: LivePollingMode; onState: (state: LiveRaceState) => void; onError: (error: string) => void }) {
-  const [status, setStatus] = useState<LivePollingStatus>({ refreshing: false, retryAttempt: 0, nextRetryAt: null });
+  const [status, setStatus] = useState<LivePollingStatus>({ refreshing: false, retryAttempt: 0, nextRetryAt: null, lifecycle: "UNKNOWN", pollingEnabled: true, activePollingGroups: [] });
   const callbacksRef = useRef({ onState, onError });
   callbacksRef.current = { onState, onError };
   const controllerRef = useRef<ReturnType<typeof createLivePollingController<LiveRaceState>> | null>(null);
@@ -27,6 +27,7 @@ export function useLiveRacePolling({ mode, onState, onError }: { mode: LivePolli
       onState: (state) => callbacksRef.current.onState(state),
       onError: (error) => callbacksRef.current.onError(error.message),
       onStatus: setStatus,
+      getPollingPolicy: (state) => ({ lifecycle: state.lifecycle, policy: state.polling }),
     });
     controllerRef.current = controller;
     const onOnline = () => controller.resume();

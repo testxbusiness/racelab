@@ -18,6 +18,7 @@ function emptyCache(): CachedStreams { return { session: null, drivers: [], posi
 export function createLiveStateLoader(provider: OpenF1LiveProvider) {
   let cache = emptyCache();
   let meta: StreamMeta = {};
+  let lastState: LiveRaceState | null = null;
 
   async function load<T>(key: StreamKey, fetcher: () => Promise<T>, fallback: T, intervalMs: number, now: number): Promise<LoadResult<T>> {
     const previous = meta[key];
@@ -41,8 +42,19 @@ export function createLiveStateLoader(provider: OpenF1LiveProvider) {
     const now = Date.now();
     const sessions = await load("session", async () => selectRaceSession((await provider.getSessions()).map(mapSession)), cache.session, POLLING_INTERVALS.session, now);
     if (!sessions.data) throw toProviderError(new Error("OpenF1 returned no latest session"), "session");
+    if (cache.session && cache.session.key !== sessions.data.key) {
+      cache = emptyCache();
+      meta = {};
+    }
     cache.session = sessions.data;
     const sessionKey = sessions.data.key;
+    const receivedAt = new Date(now).toISOString();
+    const unavailableHealth = (key: LiveStreamName): StreamHealth => meta[key]?.health ?? { status: "unavailable", receivedAt, sourceTimestamp: null, error: null };
+    const preview = composeLiveRaceState({ session: sessions.data, drivers: cache.drivers, positions: cache.position, intervals: cache.intervals, laps: cache.laps, stints: cache.stints, pitStops: cache.pit, raceControl: cache.raceControl, streams: { session: sessions.health, drivers: unavailableHealth("drivers"), position: unavailableHealth("position"), intervals: unavailableHealth("intervals"), laps: unavailableHealth("laps"), stints: unavailableHealth("stints"), pit: unavailableHealth("pit"), raceControl: unavailableHealth("raceControl") }, rateBudget: getRateBudgetSnapshot(getOpenF1Env().OPENF1_RATE_LIMIT_PER_MINUTE), receivedAt }, now);
+    if (!preview.polling.enabled) {
+      lastState = preview;
+      return preview;
+    }
     const [drivers, position, intervals, laps, stints, pit, raceControl] = await Promise.all([
       load("drivers", async () => (await provider.getDrivers(sessionKey)).map(mapDriver), cache.drivers, POLLING_INTERVALS.drivers, now),
       load("position", async () => (await provider.getPositions(sessionKey)).map(mapPosition), cache.position, POLLING_INTERVALS.position, now),
@@ -54,10 +66,11 @@ export function createLiveStateLoader(provider: OpenF1LiveProvider) {
     ]);
     cache = { session: sessions.data, drivers: drivers.data, position: position.data, intervals: intervals.data, laps: laps.data, stints: stints.data, pit: pit.data, raceControl: raceControl.data };
     const streams = { session: sessions.health, drivers: drivers.health, position: position.health, intervals: intervals.health, laps: laps.health, stints: stints.health, pit: pit.health, raceControl: raceControl.health };
-    return composeLiveRaceState({ session: sessions.data, drivers: drivers.data, positions: position.data, intervals: intervals.data, laps: laps.data, stints: stints.data, pitStops: pit.data, raceControl: raceControl.data, streams, rateBudget: getRateBudgetSnapshot(getOpenF1Env().OPENF1_RATE_LIMIT_PER_MINUTE), receivedAt: new Date(now).toISOString() }, now);
+    lastState = composeLiveRaceState({ session: sessions.data, drivers: drivers.data, positions: position.data, intervals: intervals.data, laps: laps.data, stints: stints.data, pitStops: pit.data, raceControl: raceControl.data, streams, rateBudget: getRateBudgetSnapshot(getOpenF1Env().OPENF1_RATE_LIMIT_PER_MINUTE), receivedAt }, now);
+    return lastState;
   }
 
-  return { getLiveRaceState, reset: () => { cache = emptyCache(); meta = {}; } };
+  return { getLiveRaceState, getLastState: () => lastState, reset: () => { cache = emptyCache(); meta = {}; lastState = null; } };
 }
 
 export function selectRaceSession(sessions: LiveSession[]): LiveSession | null {

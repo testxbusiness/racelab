@@ -1,9 +1,14 @@
+import type { SessionLifecycle, SessionPollingPolicy } from "@/lib/f1/domain/session-lifecycle";
+
 export type LivePollingMode = "normal" | "low-data";
 
 export type LivePollingStatus = {
   refreshing: boolean;
   retryAttempt: number;
   nextRetryAt: number | null;
+  lifecycle: SessionLifecycle | "UNKNOWN";
+  pollingEnabled: boolean;
+  activePollingGroups: readonly string[];
 };
 
 export type LivePollingScheduler = {
@@ -21,6 +26,7 @@ export type LivePollingControllerOptions<T> = {
   isOnline(): boolean;
   isVisible(): boolean;
   mode?: LivePollingMode;
+  getPollingPolicy?: (state: T) => { lifecycle: SessionLifecycle; policy: SessionPollingPolicy };
 };
 
 const NORMAL_INTERVAL_MS = 6_000;
@@ -43,7 +49,8 @@ export function createLivePollingController<T>(options: LivePollingControllerOpt
   let retryAttempt = 0;
   let timer: unknown = null;
 
-  const publish = (refreshing: boolean, nextRetryAt: number | null) => options.onStatus({ refreshing, retryAttempt, nextRetryAt });
+  let policySnapshot: Pick<LivePollingStatus, "lifecycle" | "pollingEnabled" | "activePollingGroups"> = { lifecycle: "UNKNOWN", pollingEnabled: true, activePollingGroups: [] };
+  const publish = (refreshing: boolean, nextRetryAt: number | null) => options.onStatus({ refreshing, retryAttempt, nextRetryAt, ...policySnapshot });
   const clearScheduled = () => { if (timer !== null) { options.scheduler.clearTimeout(timer); timer = null; } };
   const canPoll = () => !stopped && options.isOnline() && options.isVisible();
 
@@ -63,7 +70,17 @@ export function createLivePollingController<T>(options: LivePollingControllerOpt
       const state = await options.fetchState();
       if (stopped) return;
       retryAttempt = 0;
+      if (options.getPollingPolicy) {
+        const next = options.getPollingPolicy(state);
+        policySnapshot = { lifecycle: next.lifecycle, pollingEnabled: next.policy.enabled, activePollingGroups: next.policy.activeGroups };
+      }
       options.onState(state);
+      if (!policySnapshot.pollingEnabled) {
+        stopped = true;
+        clearScheduled();
+        publish(false, null);
+        return;
+      }
       schedule(pollingIntervalFor(mode));
     } catch (error) {
       if (stopped) return;

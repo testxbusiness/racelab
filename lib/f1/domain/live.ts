@@ -1,6 +1,7 @@
 import type { LiveStreamName } from "@/lib/openf1/polling";
+import type { SessionLifecycle, SessionPollingPolicy } from "./session-lifecycle";
 
-export type FreshnessStatus = "live" | "delayed" | "stale" | "unavailable";
+export type FreshnessStatus = "live" | "delayed" | "stale" | "unavailable" | "final";
 export type RaceStatus = "green" | "yellow" | "safety-car" | "virtual-safety-car" | "red-flag" | "ended" | "unavailable";
 
 export type LiveFreshness = {
@@ -62,4 +63,6 @@ export type LiveRaceState = {
   streams: Record<LiveStreamName | "session" | "drivers", StreamHealth>;
   rateBudget: RateBudget;
   updatedAt: string;
+  lifecycle: SessionLifecycle;
+  polling: SessionPollingPolicy;
 };

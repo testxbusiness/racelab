@@ -1,10 +1,12 @@
 import type { LiveDriver, LiveDriverTiming, LiveFreshness, LiveInterval, LiveLap, LivePitStop, LivePosition, LiveRaceControlEvent, LiveRaceState, LiveSession, LiveStint, RaceStatus, StreamHealth } from "./live";
 import type { LiveStreamName } from "@/lib/openf1/polling";
+import { pollingPolicyFor, sessionLifecycleFor } from "./session-lifecycle";
 
 const LIVE_MAX_AGE_MS = 8_000;
 const DELAYED_MAX_AGE_MS = 20_000;
 
-export function calculateFreshness(sourceTimestamp: string | null, receivedAt: string, now = Date.now()): LiveFreshness {
+export function calculateFreshness(sourceTimestamp: string | null, receivedAt: string, now = Date.now(), lifecycle?: "UPCOMING" | "LIVE" | "FINALIZING" | "ENDED"): LiveFreshness {
+  if (lifecycle === "ENDED" || lifecycle === "FINALIZING" || lifecycle === "UPCOMING") return { sourceTimestamp, receivedAt, ageMs: null, status: "final" };
   if (!sourceTimestamp) return { sourceTimestamp, receivedAt, ageMs: null, status: "unavailable" };
   const ageMs = Math.max(0, now - Date.parse(sourceTimestamp));
   const status = ageMs <= LIVE_MAX_AGE_MS ? "live" : ageMs <= DELAYED_MAX_AGE_MS ? "delayed" : "stale";
@@ -39,12 +41,12 @@ function pitStopsByDriver(pitStops: LivePitStop[]): Map<number, number> {
   return output;
 }
 
-function raceStatus(events: LiveRaceControlEvent[], session: LiveSession, now: number): RaceStatus {
-  if (session.dateEnd && Date.parse(session.dateEnd) <= now) return "ended";
+function raceStatus(events: LiveRaceControlEvent[]): RaceStatus {
   const values = [...events]
     .sort((a, b) => b.sourceTimestamp.localeCompare(a.sourceTimestamp))
     .map((event) => `${event.flag ?? ""} ${event.message ?? ""}`.toUpperCase());
   for (const value of values) {
+    if (/CHEQUERED FLAG|SESSION (ENDED|FINISHED|COMPLETE)|RACE COMPLETE|CLASSIFICATION FINAL/.test(value)) return "ended";
     if (value.includes("RED")) return "red-flag";
     if (value.includes("VIRTUAL SAFETY CAR") || value.includes("VSC")) return "virtual-safety-car";
     if (value.includes("SAFETY CAR") || value.includes("SC DEPLOYED")) return "safety-car";
@@ -89,5 +91,7 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
   }).sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
   const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp, input.streams.pit.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   const events = deduplicateRaceControl(input.raceControl);
-  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: raceStatus(events, input.session, now), timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt };
+  const currentRaceStatus = raceStatus(events);
+  const lifecycle = sessionLifecycleFor({ session: input.session, raceStatus: currentRaceStatus, raceControl: events, now });
+  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: currentRaceStatus, timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now, lifecycle), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt, lifecycle, polling: pollingPolicyFor(lifecycle) };
 }
