@@ -40,6 +40,9 @@ export const lapSchema = z.object({
 export const stintSchema = z.object({
   compound: z.string(), driver_number: z.number(), lap_end: z.number(), lap_start: z.number(), meeting_key: z.number(), session_key: z.number(), stint_number: z.number(), tyre_age_at_start: z.number(),
 }).passthrough();
+export const pitSchema = z.object({
+  date, driver_number: z.number(), lane_duration: z.number().nullable().optional(), lap_number: z.number(), meeting_key: z.number(), pit_duration: z.number().nullable().optional(), session_key: z.number(), stop_duration: z.number().nullable().optional(),
+}).passthrough();
 
 export const tokenResponseSchema = z.object({ access_token: z.string().min(1), expires_in: z.coerce.number().positive(), token_type: z.string() });
 export const emptyResultSchema = z.object({ detail: z.literal("No results found.") });
@@ -54,3 +57,4 @@ export type OpenF1Interval = z.infer<typeof intervalSchema>;
 export type OpenF1RaceControl = z.infer<typeof raceControlSchema>;
 export type OpenF1Lap = z.infer<typeof lapSchema>;
 export type OpenF1Stint = z.infer<typeof stintSchema>;
+export type OpenF1Pit = z.infer<typeof pitSchema>;

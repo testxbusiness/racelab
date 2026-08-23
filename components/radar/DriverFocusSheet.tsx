@@ -22,6 +22,7 @@ export function DriverFocusSheet({ focus, isFavourite, onClose, onSetFavourite }
         <div><span>CAR BEHIND</span><strong>{value(focus.gapToCarBehind)}</strong></div>
         <div><span>LAST LAP</span><strong>{value(timing.lastLapSeconds)}</strong></div>
         <div><span>BEST LAP</span><strong>{value(timing.bestLapSeconds)}</strong></div>
+        <div><span>PIT STOPS</span><strong>{timing.pitStops ?? "—"}</strong></div>
         <div className="focus-tyre"><span>TYRE / STINT</span><TyreBadge compound={timing.compound} age={timing.tyreAge} /></div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapDriver, mapInterval, mapLocation, mapRaceControl, mapStint } from "@/lib/openf1/mappers";
+import { mapDriver, mapInterval, mapLocation, mapPitStop, mapRaceControl, mapStint } from "@/lib/openf1/mappers";
 
 describe("OpenF1 response mappers", () => {
   it("maps provider names into the RaceLab domain without provider extras", () => {
@@ -12,6 +12,9 @@ describe("OpenF1 response mappers", () => {
   });
   it("maps location coordinates into the domain", () => {
     expect(mapLocation({ date: "2026-08-23T12:00:00+00:00", driver_number: 16, session_key: 1, x: 10, y: 20, z: 30 })).toEqual({ driverNumber: 16, x: 10, y: 20, z: 30, sourceTimestamp: "2026-08-23T12:00:00+00:00" });
+  });
+  it("maps pit stops into the domain", () => {
+    expect(mapPitStop({ date: "2026-08-22T14:30:00.000Z", driver_number: 16, lap_number: 10, meeting_key: 2, session_key: 1, lane_duration: 22.1, stop_duration: 2.4 })).toEqual({ driverNumber: 16, lapNumber: 10, sourceTimestamp: "2026-08-22T14:30:00.000Z", laneDurationSeconds: 22.1, stopDurationSeconds: 2.4 });
   });
   it("preserves OpenF1 lapped interval labels", () => {
     expect(mapInterval({ date: "2026-08-23T12:00:00+00:00", driver_number: 16, session_key: 1, interval: "+1 LAP", gap_to_leader: "+2 LAPS" })).toMatchObject({ interval: "+1 LAP", gapToLeader: "+2 LAPS" });

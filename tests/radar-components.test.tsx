@@ -11,7 +11,7 @@ import type { LiveRaceState } from "@/lib/f1/domain/live";
 
 const state: LiveRaceState = {
   session: { key: 1, meetingKey: 2, name: "Italian Grand Prix", type: "Race", countryName: "Italy", circuitName: "Monza", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
-  lapNumber: 37, totalLaps: 53, raceStatus: "yellow", timing: [{ driver: { number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }, position: 2, gapToLeader: 1.842, interval: 1.842, compound: "MEDIUM", tyreAge: 9, lastLapSeconds: null, bestLapSeconds: null, inPit: null, retired: null, sourceTimestamp: "2026-08-22T14:59:58.000Z" }],
+  lapNumber: 37, totalLaps: 53, raceStatus: "yellow", timing: [{ driver: { number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }, position: 2, gapToLeader: 1.842, interval: 1.842, compound: "MEDIUM", tyreAge: 9, lastLapSeconds: null, bestLapSeconds: null, inPit: null, retired: null, pitStops: 2, sourceTimestamp: "2026-08-22T14:59:58.000Z" }],
   raceControl: [{ id: "event", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "YELLOW FLAG", flag: "YELLOW", driverNumber: null, lapNumber: 37 }], freshness: { sourceTimestamp: "2026-08-22T14:59:58.000Z", receivedAt: "2026-08-22T15:00:00.000Z", ageMs: 2000, status: "live" }, streams: {} as LiveRaceState["streams"], rateBudget: { requestsLast60Seconds: 1, maxRequestsPerMinute: 60, usageRatio: 0.01, warning: "none", authRefreshes: 0, endpoints: {} }, updatedAt: "2026-08-22T15:00:00.000Z",
 };
 
@@ -26,7 +26,7 @@ describe("Race Radar components", () => {
   });
   it("renders timing, interval, team accent and tyre age without provider payloads", () => {
     const html = renderToStaticMarkup(<Leaderboard timing={state.timing} favouriteDriverNumber={16} onDriverSelect={() => undefined} />);
-    expect(html).toContain("LEC"); expect(html).toContain("+1.842"); expect(html).toContain("M"); expect(html).toContain("9"); expect(html).toContain("--team-accent:#E8002D");
+    expect(html).toContain("LEC"); expect(html).toContain("+1.842"); expect(html).toContain("M"); expect(html).toContain("9"); expect(html).toContain("PITS 2"); expect(html).toContain("--team-accent:#E8002D");
   });
   it("marks the favourite row and exposes a mobile driver focus entry point", () => {
     const html = renderToStaticMarkup(<Leaderboard timing={state.timing} favouriteDriverNumber={16} onDriverSelect={() => undefined} />);

@@ -3,7 +3,7 @@ import { calculateFreshness, composeLiveRaceState, deduplicateRaceControl } from
 
 const receivedAt = "2026-08-22T15:00:00.000Z";
 const streams = {
-  session: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, drivers: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, position: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:58.000Z", error: null }, intervals: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:57.000Z", error: null }, laps: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, stints: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, raceControl: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:59.000Z", error: null },
+  session: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, drivers: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, position: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:58.000Z", error: null }, intervals: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:57.000Z", error: null }, laps: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, stints: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, pit: { status: "fresh" as const, receivedAt, sourceTimestamp: null, error: null }, raceControl: { status: "fresh" as const, receivedAt, sourceTimestamp: "2026-08-22T14:59:59.000Z", error: null },
 };
 const rateBudget = { requestsLast60Seconds: 6, maxRequestsPerMinute: 60, usageRatio: 0.1, warning: "none" as const, authRefreshes: 0, endpoints: {} };
 
@@ -16,13 +16,14 @@ describe("LiveRaceState composer", () => {
       intervals: [{ driverNumber: 16, interval: 1.2, gapToLeader: 4.1, sourceTimestamp: "2026-08-22T14:59:57.000Z" }],
       laps: [{ driverNumber: 16, lapNumber: 21, durationSeconds: 81.234, sourceTimestamp: null }],
       stints: [{ driverNumber: 16, stintNumber: 2, compound: "MEDIUM", lapStart: 15, lapEnd: 21, tyreAgeAtStart: 3 }],
+      pitStops: [{ driverNumber: 16, lapNumber: 10, sourceTimestamp: "2026-08-22T14:30:00.000Z", laneDurationSeconds: 22, stopDurationSeconds: 2.4 }, { driverNumber: 16, lapNumber: 20, sourceTimestamp: "2026-08-22T14:45:00.000Z", laneDurationSeconds: 21, stopDurationSeconds: 2.1 }],
       raceControl: [
         { id: "same", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "GREEN FLAG", flag: "GREEN", driverNumber: null, lapNumber: 21 },
         { id: "same", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Flag", message: "GREEN FLAG", flag: "GREEN", driverNumber: null, lapNumber: 21 },
       ], streams, rateBudget, receivedAt,
     }, Date.parse(receivedAt));
     expect(state.lapNumber).toBe(21);
-    expect(state.timing[0]).toMatchObject({ position: 2, gapToLeader: 4.1, compound: "MEDIUM", tyreAge: 9 });
+    expect(state.timing[0]).toMatchObject({ position: 2, gapToLeader: 4.1, compound: "MEDIUM", tyreAge: 9, pitStops: 2 });
     expect(state.raceControl).toHaveLength(1);
     expect(state.freshness.status).toBe("live");
   });
@@ -35,10 +36,21 @@ describe("LiveRaceState composer", () => {
   it("keeps the live status green when the latest race-control message is informational", () => {
     const state = composeLiveRaceState({
       session: { key: 1, meetingKey: 2, name: "Race", type: "Race", countryName: "Netherlands", circuitName: "Zandvoort", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
-      drivers: [], positions: [], intervals: [], laps: [], stints: [],
+      drivers: [], positions: [], intervals: [], laps: [], stints: [], pitStops: [],
       raceControl: [{ id: "info", sourceTimestamp: "2026-08-22T14:59:59.000Z", category: "Other", message: "PIT LANE OPEN", flag: null, driverNumber: null, lapNumber: null }],
       streams, rateBudget, receivedAt,
     }, Date.parse(receivedAt));
     expect(state.raceStatus).toBe("green");
+  });
+
+  it("keeps pit stop count for a driver with no current position", () => {
+    const state = composeLiveRaceState({
+      session: { key: 1, meetingKey: 2, name: "Race", type: "Race", countryName: "Italy", circuitName: "Monza", dateStart: "2026-08-22T14:00:00.000Z", dateEnd: null },
+      drivers: [{ number: 16, fullName: "Charles Leclerc", acronym: "LEC", teamName: "Ferrari", teamColour: "E8002D" }],
+      positions: [], intervals: [], laps: [], stints: [],
+      pitStops: [{ driverNumber: 16, lapNumber: 10, sourceTimestamp: "2026-08-22T14:30:00.000Z", laneDurationSeconds: 22, stopDurationSeconds: 2.4 }],
+      raceControl: [], streams, rateBudget, receivedAt,
+    }, Date.parse(receivedAt));
+    expect(state.timing[0]).toMatchObject({ position: null, pitStops: 1 });
   });
 });

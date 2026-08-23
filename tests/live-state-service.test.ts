@@ -27,6 +27,7 @@ describe("live state loader", () => {
       getIntervals: async () => { if (failIntervals) throw new Error("intervals down"); return [{ date: timestamp, driver_number: 16, session_key: 1, interval: 1.2, gap_to_leader: 4.1 }]; },
       getLaps: async () => [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null, lap_duration: null }],
       getStints: async () => [],
+      getPitStops: async () => [],
       getRaceControl: async () => [],
     };
     const loader = createLiveStateLoader(provider);
@@ -52,6 +53,7 @@ describe("live state loader", () => {
       getIntervals: async () => { calls.intervals += 1; return [{ date: timestamp, driver_number: 16, session_key: 1, interval: 1.2, gap_to_leader: 4.1 }]; },
       getLaps: async () => { calls.laps += 1; return [{ session_key: 1, driver_number: 16, lap_number: 20, date_start: null, date_end: null, lap_duration: null }]; },
       getStints: async () => [],
+      getPitStops: async () => [],
       getRaceControl: async () => { calls.raceControl += 1; return []; },
     };
     const loader = createLiveStateLoader(provider);

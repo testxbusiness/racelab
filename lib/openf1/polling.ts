@@ -6,6 +6,7 @@ export const POLLING_INTERVALS = {
   raceControl: 10_000,
   laps: 15_000,
   stints: 30_000,
+  pit: 30_000,
 } as const;
 
 export type LiveStreamName = keyof typeof POLLING_INTERVALS;

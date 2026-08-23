@@ -1,4 +1,4 @@
-import type { LiveDriver, LiveDriverTiming, LiveFreshness, LiveInterval, LiveLap, LivePosition, LiveRaceControlEvent, LiveRaceState, LiveSession, LiveStint, RaceStatus, StreamHealth } from "./live";
+import type { LiveDriver, LiveDriverTiming, LiveFreshness, LiveInterval, LiveLap, LivePitStop, LivePosition, LiveRaceControlEvent, LiveRaceState, LiveSession, LiveStint, RaceStatus, StreamHealth } from "./live";
 import type { LiveStreamName } from "@/lib/openf1/polling";
 
 const LIVE_MAX_AGE_MS = 8_000;
@@ -33,6 +33,12 @@ function latestStintByDriver(stints: LiveStint[]): Map<number, LiveStint> {
   return output;
 }
 
+function pitStopsByDriver(pitStops: LivePitStop[]): Map<number, number> {
+  const output = new Map<number, number>();
+  for (const pitStop of pitStops) output.set(pitStop.driverNumber, (output.get(pitStop.driverNumber) ?? 0) + 1);
+  return output;
+}
+
 function raceStatus(events: LiveRaceControlEvent[], session: LiveSession, now: number): RaceStatus {
   if (session.dateEnd && Date.parse(session.dateEnd) <= now) return "ended";
   const values = [...events]
@@ -55,6 +61,7 @@ export type LiveRaceInputs = {
   intervals: LiveInterval[];
   laps: LiveLap[];
   stints: LiveStint[];
+  pitStops: LivePitStop[];
   raceControl: LiveRaceControlEvent[];
   streams: Record<LiveStreamName | "session" | "drivers", StreamHealth>;
   rateBudget: LiveRaceState["rateBudget"];
@@ -70,15 +77,17 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
     if (lap.durationSeconds !== null && (!lapTimes.has(lap.driverNumber) || lap.durationSeconds < lapTimes.get(lap.driverNumber)!)) lapTimes.set(lap.driverNumber, lap.durationSeconds);
   }
   const stints = latestStintByDriver(input.stints);
+  const pitStops = pitStopsByDriver(input.pitStops);
+  const pitDataAvailable = input.streams.pit.status !== "unavailable" || input.pitStops.length > 0;
   const timing: LiveDriverTiming[] = input.drivers.map((driver) => {
     const position = positions.get(driver.number);
     const interval = intervals.get(driver.number);
     const lap = laps.get(driver.number);
     const stint = stints.get(driver.number);
     const tyreAge = stint && lap ? Math.max(stint.tyreAgeAtStart, stint.tyreAgeAtStart + lap.lapNumber - stint.lapStart) : null;
-    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, lastLapSeconds: lap?.durationSeconds ?? null, bestLapSeconds: lapTimes.get(driver.number) ?? null, inPit: null, retired: null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
+    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, lastLapSeconds: lap?.durationSeconds ?? null, bestLapSeconds: lapTimes.get(driver.number) ?? null, inPit: null, retired: null, pitStops: pitDataAvailable ? pitStops.get(driver.number) ?? 0 : null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
   }).sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
-  const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+  const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp, input.streams.pit.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   const events = deduplicateRaceControl(input.raceControl);
   return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: raceStatus(events, input.session, now), timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt };
 }

@@ -661,6 +661,8 @@ DevTools:
 
 - [x] OpenF1 interval payloads accept numeric/null gaps and documented lapped-driver labels such as `+1 LAP`/`+N LAPS`.
 - [x] Lapped labels remain visible in the leaderboard and driver focus UI; numeric-only calculations skip nonnumeric labels safely.
+- [x] Added the OpenF1 `pit` stream with validated records, session-level historical counting per driver, and `PITS 0…n` display in Radar rows and Driver Focus. Counts remain available for drivers whose current position is missing after retirement, as long as the provider returned the session pit history.
+- [x] Validation: `npm run lint`, `npm run typecheck`, `npm test` (48 tests), and `npm run build`.
 
 ---
 
