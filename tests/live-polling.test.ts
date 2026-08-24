@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createLivePollingController, pollingIntervalFor, retryDelayFor, type LivePollingScheduler, type LivePollingStatus } from "@/features/connectivity/live-polling";
+import type { SessionLifecycle, SessionPollingPolicy } from "@/lib/f1/domain/session-lifecycle";
 
 type Scheduled = { callback: () => void; delayMs: number };
 
@@ -104,5 +105,17 @@ describe("live polling resilience", () => {
     await harness.runNext();
     expect(harness.delays()).toEqual([]);
     expect(statuses.at(-1)).toMatchObject({ lifecycle: "ENDED", pollingEnabled: false, activePollingGroups: [] });
+  });
+
+  it("can restart after a completed session for replay controls", async () => {
+    const harness = createScheduler();
+    let ended = true;
+    const controller = createLivePollingController<{ lifecycle: SessionLifecycle; polling: SessionPollingPolicy }>({
+      fetchState: vi.fn().mockImplementation(async () => ended ? { lifecycle: "ENDED", polling: { enabled: false, activeGroups: [] } } : { lifecycle: "LIVE", polling: { enabled: true, activeGroups: ["position"] } }),
+      onState: () => { ended = false; }, onError: () => undefined, onStatus: () => undefined,
+      getPollingPolicy: (state) => ({ lifecycle: state.lifecycle, policy: state.polling }), scheduler: harness.scheduler, isOnline: () => true, isVisible: () => true,
+    });
+    controller.start(); await harness.runNext(); expect(harness.delays()).toEqual([]);
+    controller.restart(); await harness.runNext(); expect(harness.delays()).toEqual([6_000]);
   });
 });

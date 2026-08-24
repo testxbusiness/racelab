@@ -1,4 +1,4 @@
-const VERSION = "racelab-pwa-v1";
+const VERSION = "racelab-pwa-v3";
 const STATIC_CACHE = VERSION + "-static";
 const APP_SHELL = ["/", "/radar", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/tracks/monza.svg"];
 
@@ -14,7 +14,9 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return;
   if (url.pathname.startsWith("/api/openf1/")) return;
+  if (url.pathname.startsWith("/api/replay/") || url.pathname.startsWith("/replay")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then((response) => {

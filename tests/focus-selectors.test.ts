@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { selectDriverFocus } from "@/lib/f1/selectors/focus";
 import type { LiveDriverTiming } from "@/lib/f1/domain/live";
 
-const driver = (number: number, position: number, gapToLeader: number): LiveDriverTiming => ({ driver: { number, fullName: `Driver ${number}`, acronym: `D${number}`, teamName: "Team", teamColour: null }, position, gapToLeader, interval: position === 1 ? 0 : 2.5, compound: "MEDIUM", tyreAge: 8, lastLapSeconds: 81.2, bestLapSeconds: 80.9, inPit: null, retired: null, pitStops: 0, sourceTimestamp: null });
+const driver = (number: number, position: number, gapToLeader: number): LiveDriverTiming => ({ driver: { number, fullName: `Driver ${number}`, acronym: `D${number}`, teamName: "Team", teamColour: null }, position, gapToLeader, interval: position === 1 ? 0 : 2.5, compound: "MEDIUM", tyreAge: 8, lastLapSeconds: 81.2, bestLapSeconds: 80.9, bestLapNumber: 14, inPit: null, retired: null, pitStops: 0, sourceTimestamp: null });
 
 describe("driver focus selectors", () => {
   it("derives the gaps around a selected driver from the composed timing", () => {

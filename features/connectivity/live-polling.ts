@@ -97,6 +97,7 @@ export function createLivePollingController<T>(options: LivePollingControllerOpt
     stop: () => { stopped = true; clearScheduled(); publish(false, null); },
     retryNow: () => { if (!inFlight) schedule(0); },
     resume: () => { if (!inFlight) schedule(0); },
+    restart: () => { stopped = false; retryAttempt = 0; policySnapshot = { lifecycle: "UNKNOWN", pollingEnabled: true, activePollingGroups: [] }; if (!inFlight) schedule(0); },
     suspend: () => { clearScheduled(); publish(false, null); },
     setMode: (nextMode: LivePollingMode) => { mode = nextMode; if (!inFlight) schedule(0); },
   };

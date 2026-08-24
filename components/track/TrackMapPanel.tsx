@@ -10,9 +10,9 @@ import type { SessionLifecycle } from "@/lib/f1/domain/session-lifecycle";
 
 const statusLabel: Record<ReturnType<typeof useTrackMapData>["status"], string> = { loading: "LOADING MAP", live: "MAP LIVE", delayed: "MAP DELAYED", stale: "MAP STALE", unavailable: "MAP UNAVAILABLE", paused: "MAP PAUSED" };
 
-export function TrackMapPanel({ sessionKey, timing, favouriteDriverNumber, geometry, lowDataMode = false, lifecycle = "LIVE" }: { sessionKey: number; timing: LiveDriverTiming[]; favouriteDriverNumber: number | null; geometry: TrackGeometry; lowDataMode?: boolean; lifecycle?: SessionLifecycle }) {
+export function TrackMapPanel({ sessionKey, timing, favouriteDriverNumber, geometry, lowDataMode = false, lifecycle = "LIVE", replayFixtureId = null, replayElapsedMs = 0 }: { sessionKey: number; timing: LiveDriverTiming[]; favouriteDriverNumber: number | null; geometry: TrackGeometry; lowDataMode?: boolean; lifecycle?: SessionLifecycle; replayFixtureId?: string | null; replayElapsedMs?: number }) {
   const mapEnabled = !lowDataMode && lifecycle === "LIVE";
-  const map = useTrackMapData(sessionKey, geometry.bounds, mapEnabled);
+  const map = useTrackMapData(sessionKey, geometry.bounds, mapEnabled, { replayFixtureId, replayElapsedMs });
   const displayStatus = lowDataMode ? "paused" : map.status;
   const [selectedDriverNumber, setSelectedDriverNumber] = useState<number | null>(favouriteDriverNumber);
   const markers = useMemo<TrackMarker[]>(() => {

@@ -17,5 +17,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
 }
 
 function PwaRegistration() {
-  return <script dangerouslySetInnerHTML={{ __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }` }} />;
+  const script = process.env.NODE_ENV === "production"
+    ? `if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }`
+    : `if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.getRegistrations().then(function (registrations) { registrations.forEach(function (registration) { registration.unregister(); }); }); caches.keys().then(function (keys) { return Promise.all(keys.map(function (key) { return caches.delete(key); })); }); }); }`;
+  return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }

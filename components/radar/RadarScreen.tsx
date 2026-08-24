@@ -17,8 +17,10 @@ import { createLastKnownLiveState, LAST_KNOWN_LIVE_KEY, parseLastKnownLiveState 
 import { useLiveRacePolling } from "@/features/connectivity/useLiveRacePolling";
 import { useLowDataMode } from "@/features/preferences/useLowDataMode";
 import { DesktopRail } from "./DesktopRail";
+import { ReplayRadarControls } from "@/components/replay/ReplayRadarControls";
+import { FastestLapCard } from "./FastestLapCard";
 
-export function RadarScreen({ initialState, initialError }: { initialState: LiveRaceState | null; initialError: string | null }) {
+export function RadarScreen({ initialState, initialError, replayFixtureId = null }: { initialState: LiveRaceState | null; initialError: string | null; replayFixtureId?: string | null }) {
   const [state, setState] = useState(initialState);
   const [error, setError] = useState(initialError);
   const [offline, setOffline] = useState(false);
@@ -28,11 +30,14 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
   const [favouriteDriverNumber, setFavouriteDriverNumber] = useFavouriteDriver();
   const [focusedDriverNumber, setFocusedDriverNumber] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<RadarView>("timing");
+  const replayMode = Boolean(replayFixtureId);
+  const [replayClock, setReplayClock] = useState({ playing: false, speed: 1 as 1 | 2 | 4 | 10 | 30, elapsedMs: 0, lap: null });
   const focus = state ? selectDriverFocus(state.timing, focusedDriverNumber) : null;
   const trackGeometry = getTrackGeometry(state?.session.circuitName ?? null);
   const mapAvailable = Boolean(trackGeometry);
   const { refreshing, retryAttempt, nextRetryAt, retryNow } = useLiveRacePolling({
     mode: lowDataMode ? "low-data" : "normal",
+    source: replayFixtureId ? { kind: "replay", fixtureId: replayFixtureId, elapsedMs: replayClock.elapsedMs } : { kind: "live" },
     onState: (nextState) => {
       setState(nextState);
       setCachedAt(null);
@@ -41,6 +46,8 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
     },
     onError: setError,
   });
+
+  useEffect(() => { if (!replayMode || !replayClock.playing) return; const timer = window.setInterval(() => setReplayClock((current) => ({ ...current, elapsedMs: current.elapsedMs + 250 * current.speed })), 250); return () => window.clearInterval(timer); }, [replayMode, replayClock.playing]);
 
   useEffect(() => { stateRef.current = state; }, [state]);
 
@@ -59,7 +66,7 @@ export function RadarScreen({ initialState, initialError }: { initialState: Live
   }, [initialState]);
 
   const refreshTone = refreshStatusTone({ cachedAt, error, offline, refreshing, retryAttempt, lifecycle: state?.lifecycle });
-  return <main className="radar-page" data-low-data={lowDataMode || undefined}><div className="radar-layout"><DesktopRail /><div className="radar-shell">{state ? <><LiveHeader state={state} reconnecting={refreshing} retrying={retryAttempt > 0} offline={offline} /><RadarViewTabs activeView={activeView} onChange={setActiveView} mapAvailable={mapAvailable} /><div className={`refresh-notice refresh-notice-${refreshTone}`} aria-live="polite"><span className="refresh-signal" aria-hidden="true">{refreshTone === "live" ? "●" : refreshTone === "offline" ? "×" : refreshTone === "final" ? "✓" : "◷"}</span><span>{refreshMessage({ cachedAt, error, offline, refreshing, retryAttempt, nextRetryAt, lowDataMode, lifecycle: state.lifecycle })}</span>{state.lifecycle === "LIVE" ? <div className="resilience-actions"><button type="button" className="resilience-button" onClick={retryNow} disabled={offline || refreshing}>Retry</button><button type="button" className="resilience-button" aria-pressed={lowDataMode} onClick={toggleLowDataMode}>Low data: {lowDataMode ? "On" : "Off"}</button></div> : null}</div>{activeView === "timing" ? <div id="timing"><RaceStatus state={state} /><Leaderboard timing={state.timing} favouriteDriverNumber={favouriteDriverNumber} onDriverSelect={(driver) => setFocusedDriverNumber(driver.driver.number)} /></div> : null}{activeView === "map" && trackGeometry ? <TrackMapPanel sessionKey={state.session.key} timing={state.timing} favouriteDriverNumber={favouriteDriverNumber} geometry={trackGeometry} lowDataMode={lowDataMode} lifecycle={state.lifecycle} /> : null}{activeView === "events" ? <div id="events"><EventFeed events={state.raceControl} /></div> : null}<DriverFocusSheet focus={focus} isFavourite={focus?.timing.driver.number === favouriteDriverNumber} onClose={() => setFocusedDriverNumber(null)} onSetFavourite={() => { if (focus) setFavouriteDriverNumber(focus.timing.driver.number); }} /></> : <section className={`unavailable-card unavailable-${initialError ? "error" : "loading"}`} role={initialError ? "alert" : "status"}><span className="unavailable-icon" aria-hidden="true">{initialError ? "!" : ""}</span><p className="unavailable-kicker">RACE RADAR</p><h1>{initialError ? "Live timing unavailable" : "Loading live timing"}</h1><p>{error ?? "Connecting to the live session…"}</p><button type="button" onClick={retryNow} disabled={offline || refreshing}>{initialError ? "Retry" : "Connect"}</button></section>}<RadarNav /></div></div></main>;
+  return <main className="radar-page" data-low-data={lowDataMode || undefined}><div className="radar-layout"><DesktopRail /><div className="radar-shell">{replayMode ? <ReplayRadarControls fixtureId={replayFixtureId ?? ""} clock={replayClock} state={state} onToggle={() => setReplayClock((current) => ({ ...current, playing: !current.playing }))} onRestart={() => setReplayClock((current) => ({ ...current, playing: false, elapsedMs: 0 }))} onSpeed={(speed) => setReplayClock((current) => ({ ...current, speed }))} /> : null}{state ? <><LiveHeader state={state} reconnecting={refreshing} retrying={retryAttempt > 0} offline={offline} /><RadarViewTabs activeView={activeView} onChange={setActiveView} mapAvailable={mapAvailable} /><div className={`refresh-notice refresh-notice-${refreshTone}`} aria-live="polite"><span className="refresh-signal" aria-hidden="true">{refreshTone === "live" ? "●" : refreshTone === "offline" ? "×" : refreshTone === "final" ? "✓" : "◷"}</span><span>{refreshMessage({ cachedAt, error, offline, refreshing, retryAttempt, nextRetryAt, lowDataMode, lifecycle: state.lifecycle })}</span>{state.lifecycle === "LIVE" ? <div className="resilience-actions"><button type="button" className="resilience-button" onClick={retryNow} disabled={offline || refreshing}>Retry</button><button type="button" className="resilience-button" aria-pressed={lowDataMode} onClick={toggleLowDataMode}>Low data: {lowDataMode ? "On" : "Off"}</button></div> : null}</div>{activeView === "timing" ? <div id="timing"><RaceStatus state={state} /><FastestLapCard state={state} /><Leaderboard timing={state.timing} favouriteDriverNumber={favouriteDriverNumber} onDriverSelect={(driver) => setFocusedDriverNumber(driver.driver.number)} /></div> : null}{activeView === "map" && trackGeometry ? <TrackMapPanel sessionKey={state.session.key} timing={state.timing} favouriteDriverNumber={favouriteDriverNumber} geometry={trackGeometry} lowDataMode={lowDataMode} lifecycle={state.lifecycle} replayFixtureId={replayFixtureId} replayElapsedMs={replayClock.elapsedMs} /> : null}{activeView === "events" ? <div id="events"><EventFeed events={state.raceControl} /></div> : null}<DriverFocusSheet focus={focus} sessionDateStart={state.session.dateStart} lifecycle={state.lifecycle} isFavourite={focus?.timing.driver.number === favouriteDriverNumber} onClose={() => setFocusedDriverNumber(null)} onSetFavourite={() => { if (focus) setFavouriteDriverNumber(focus.timing.driver.number === favouriteDriverNumber ? null : focus.timing.driver.number); }} /></> : <section className={`unavailable-card unavailable-${initialError ? "error" : "loading"}`} role={initialError ? "alert" : "status"}><span className="unavailable-icon" aria-hidden="true">{initialError ? "!" : ""}</span><p className="unavailable-kicker">RACE RADAR</p><h1>{initialError ? "Live timing unavailable" : "Loading live timing"}</h1><p>{error ?? "Connecting to the live session…"}</p><button type="button" onClick={retryNow} disabled={offline || refreshing}>{initialError ? "Retry" : "Connect"}</button></section>}<RadarNav /></div></div></main>;
 }
 
 function refreshStatusTone({ cachedAt, error, offline, refreshing, retryAttempt, lifecycle }: { cachedAt: string | null; error: string | null; offline: boolean; refreshing: boolean; retryAttempt: number; lifecycle?: LiveRaceState["lifecycle"] }): "live" | "delayed" | "offline" | "final" | "scheduled" {

@@ -5,11 +5,15 @@ import type { LiveRaceState } from "@/lib/f1/domain/live";
 import { createLivePollingController, type LivePollingMode, type LivePollingStatus } from "./live-polling";
 
 type ApiResult = { ok: true; state: LiveRaceState } | { ok: false; error: string };
+export type LivePollingSource = { kind: "live" } | { kind: "replay"; fixtureId: string; elapsedMs: number };
 
-export function useLiveRacePolling({ mode, onState, onError }: { mode: LivePollingMode; onState: (state: LiveRaceState) => void; onError: (error: string) => void }) {
+export function useLiveRacePolling({ mode, source = { kind: "live" }, onState, onError }: { mode: LivePollingMode; source?: LivePollingSource; onState: (state: LiveRaceState) => void; onError: (error: string) => void }) {
   const [status, setStatus] = useState<LivePollingStatus>({ refreshing: false, retryAttempt: 0, nextRetryAt: null, lifecycle: "UNKNOWN", pollingEnabled: true, activePollingGroups: [] });
   const callbacksRef = useRef({ onState, onError });
   callbacksRef.current = { onState, onError };
+  const sourceRef = useRef(source);
+  sourceRef.current = source;
+  const previousSourceRef = useRef(source);
   const controllerRef = useRef<ReturnType<typeof createLivePollingController<LiveRaceState>> | null>(null);
 
   useEffect(() => {
@@ -19,7 +23,9 @@ export function useLiveRacePolling({ mode, onState, onError }: { mode: LivePolli
       isOnline: () => navigator.onLine,
       isVisible: () => document.visibilityState === "visible",
       fetchState: async () => {
-        const response = await fetch("/api/openf1/live", { cache: "no-store" });
+        const currentSource = sourceRef.current;
+        const url = currentSource.kind === "live" ? "/api/openf1/live" : `/api/replay/${currentSource.fixtureId}?elapsedMs=${currentSource.elapsedMs}`;
+        const response = await fetch(url, { cache: "no-store" });
         const result = (await response.json()) as ApiResult;
         if (!response.ok || !result.ok) throw new Error(result.ok ? "Live provider unavailable" : result.error);
         return result.state;
@@ -47,6 +53,11 @@ export function useLiveRacePolling({ mode, onState, onError }: { mode: LivePolli
   }, []);
 
   useEffect(() => { controllerRef.current?.setMode(mode); }, [mode]);
+  useEffect(() => {
+    const previous = previousSourceRef.current;
+    if (previous.kind === "replay" && source.kind === "replay" && previous.fixtureId === source.fixtureId && previous.elapsedMs > 0 && source.elapsedMs === 0) controllerRef.current?.restart();
+    previousSourceRef.current = source;
+  }, [source]);
 
-  return { ...status, retryNow: () => controllerRef.current?.retryNow() };
+  return { ...status, retryNow: () => controllerRef.current?.retryNow(), restart: () => controllerRef.current?.restart() };
 }

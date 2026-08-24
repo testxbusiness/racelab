@@ -26,11 +26,12 @@ export type LiveDriver = { number: number; fullName: string; acronym: string; te
 export type LiveGap = number | string | null;
 export type LivePosition = { driverNumber: number; position: number; sourceTimestamp: string };
 export type LiveInterval = { driverNumber: number; interval: LiveGap; gapToLeader: LiveGap; sourceTimestamp: string };
-export type LiveLap = { driverNumber: number; lapNumber: number; durationSeconds: number | null; sourceTimestamp: string | null };
+export type LiveLap = { driverNumber: number; lapNumber: number; durationSeconds: number | null; sector1Seconds?: number | null; sector2Seconds?: number | null; sector3Seconds?: number | null; isPitOutLap?: boolean; sourceTimestamp: string | null };
 export type LiveLocationSample = { driverNumber: number; x: number; y: number; z: number; sourceTimestamp: string };
 export type LiveStint = { driverNumber: number; stintNumber: number; compound: string; lapStart: number; lapEnd: number; tyreAgeAtStart: number };
 export type LivePitStop = { driverNumber: number; lapNumber: number; sourceTimestamp: string; laneDurationSeconds: number | null; stopDurationSeconds: number | null };
 export type LiveRaceControlEvent = { id: string; sourceTimestamp: string; category: string; message: string | null; flag: string | null; driverNumber: number | null; lapNumber: number | null };
+export type LiveFastestLap = { driverNumber: number; lapNumber: number; durationSeconds: number; sourceTimestamp: string | null };
 
 export type LiveDriverTiming = {
   driver: LiveDriver;
@@ -40,7 +41,11 @@ export type LiveDriverTiming = {
   compound: string | null;
   tyreAge: number | null;
   lastLapSeconds: number | null;
+  sector1Seconds?: number | null;
+  sector2Seconds?: number | null;
+  sector3Seconds?: number | null;
   bestLapSeconds: number | null;
+  bestLapNumber: number | null;
   inPit: boolean | null;
   retired: boolean | null;
   pitStops: number | null;
@@ -57,6 +62,7 @@ export type LiveRaceState = {
   lapNumber: number | null;
   totalLaps: number | null;
   raceStatus: RaceStatus;
+  fastestLap: LiveFastestLap | null;
   timing: LiveDriverTiming[];
   raceControl: LiveRaceControlEvent[];
   freshness: LiveFreshness;

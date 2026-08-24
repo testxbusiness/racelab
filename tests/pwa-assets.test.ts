@@ -17,8 +17,23 @@ describe("PWA foundation", () => {
     expect(serviceWorker).toContain('"/radar"');
   });
 
+  it("keeps localhost development requests outside the service-worker cache", () => {
+    expect(serviceWorker).toContain('if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return;');
+  });
+
   it("precaches the static Monza geometry", () => {
     expect(serviceWorker).toContain('"/tracks/monza.svg"');
     expect(existsSync("public/tracks/monza.svg")).toBe(true);
+  });
+
+  it("keeps the home hero image assets available", () => {
+    expect(existsSync("public/immagine_sfondo_home.png")).toBe(true);
+    expect(existsSync("public/assets/F1.png")).toBe(true);
+  });
+
+  it("keeps driver, team, and car assets available", () => {
+    expect(existsSync("public/assets/piloti/lando-norris-f1-driver-profile-picture.webp")).toBe(true);
+    expect(existsSync("public/assets/teams/mclaren.jpeg")).toBe(true);
+    expect(existsSync("public/assets/vetture/2026mclarencarright.avif")).toBe(true);
   });
 });

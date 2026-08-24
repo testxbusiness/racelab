@@ -1253,3 +1253,140 @@ Do not start Track Map until the live provider proof has succeeded.
 - Validate rate-limit thresholds against the actual OpenF1 subscription limit and set `OPENF1_RATE_LIMIT_PER_MINUTE` when known; the current 60/minute default is conservative instrumentation only.
 - Re-test stints and intervals during an active race session, where both streams are expected to contain useful timing/tyre data.
 - Next recommended action: begin Phase 3 Race Radar timing UI using `LiveRaceState`, without introducing Track Map work.
+
+---
+
+# 24. Historical Live Replay — 23 August 2026
+
+## Architecture
+
+Replay is a development/testing provider parallel to `OpenF1Provider`. A fixture is read once from the local filesystem, `ReplayClock` supplies virtual elapsed time, and `ReplayProvider` exposes only records whose original timestamp has been reached. `replayStateAt` maps those records through the existing OpenF1 mappers and `composeLiveRaceState`, so Race Radar continues to consume the same domain state. The normal `/radar` route has no simulation branch; `/replay` is development-only and is visibly labelled `SIMULATION`.
+
+## Fixture format
+
+`fixtures/session-<session_key>/manifest.json` is versioned as `racelab-replay` version 1. Endpoint payloads live under `endpoints/` using the original OpenF1 shapes. Location is split into bounded 15-minute files, preserving source timestamps and allowing incremental cursor reads. The manifest records endpoint counts, timestamp ranges, session boundaries, location windows, and whether downsampling was used.
+
+## Commands
+
+Download a completed session with:
+
+```bash
+npm run replay:download -- 9912
+```
+
+Start the local development server and open `/replay`:
+
+```bash
+npm run dev
+```
+
+## Findings
+
+- Timestamp gating is sufficient for position, intervals, laps, pit, race-control, and location records.
+- Stints have no timestamp, so replay gates them by their `lap_start` and the highest completed lap.
+- Lap completion uses `date_end`, then `date_start`/`date` as a documented fallback; `session_result` is not loaded or used as live state.
+- Location is filtered by the last source timestamp, so a replay tick does not reprocess future samples or require OpenF1 requests.
+- Fault injection is provider-level and supports offline/error, 429-style, delayed, stale, intervals, and location failures through development configuration.
+
+## Technical risks
+
+- OpenF1 historical responses can change shape; fixture creation validates array responses and the runtime provider still relies on the existing domain mappers.
+- Large location sessions may produce many local files; the builder bounds requests but currently leaves downsampling disabled (`null`) to preserve debugging fidelity.
+- Replay state is currently requested per virtual-time tick by the development route; production live polling is untouched, and a future local-only replay worker could reduce repeated fixture parsing for very large fixtures.
+- Replay fixture loading is cached per server process, and the development panel permits only one replay request in flight at a time to prevent slow-fixture request pileups.
+
+## Verification
+
+- Replay tests cover deterministic clock controls, pause/resume, speed changes, restart, future-data exclusion, stint/lap causality, incremental location cursors, and isolated 429 endpoint failure.
+- Do not mark this phase complete until lint, typecheck, all tests, and production build pass.
+
+### Downloader rate-limit follow-up — 23 August 2026
+
+- [x] Added a 400ms default request spacing to the fixture builder, configurable with `OPENF1_REQUEST_INTERVAL_MS`.
+- [x] Added bounded retry/backoff for HTTP 429 responses, honoring `Retry-After` when supplied.
+- [x] A failed download can be safely rerun with the same command; endpoint files and the manifest are rewritten.
+- [x] Location window queries now preserve OpenF1’s documented `date>`/`date<` operator names instead of URL-encoding operators through `URLSearchParams`, which caused HTTP 500 responses for the Monza fixture.
+- [x] The builder treats OpenF1’s documented empty-result `404` response (`No results found.`) as an empty endpoint/window, while preserving other 404 errors as failures.
+
+### Replay home entry point — 23 August 2026
+
+- [x] Added a development-only `Open Historical Replay` CTA to the home page linking to `/replay`.
+- [x] Kept the production home focused on the normal Race Radar CTA; the replay link is omitted from production because the replay route is development-only.
+- [x] Replay fixture selection now displays circuit and season, e.g. `Monza 2025`; older manifests derive the label from their stored session metadata.
+
+### Replay Radar development mode — 24 August 2026
+
+- [x] Added development-only `/radar?replay=session-<session_key>` mode.
+- [x] Replay Radar uses the same `LiveRaceState`, Race Radar components, browser lifecycle handling, and polling controller as the live route; only the source URL changes to the local replay endpoint.
+- [x] Added in-Radar SIMULATION controls for play/pause, restart, speed, virtual time, and fixture switching.
+- [x] Replay API now composes lifecycle/freshness against virtual time, preventing an already-completed historical session from disabling the replay polling controller at startup.
+
+### Track Map optimization — 24 August 2026
+
+- [x] Replay Radar now reads location samples from the local fixture through `/api/replay/<id>/location`, using the same incremental timestamp cursor as live location polling.
+- [x] Track geometry is memoized as a static SVG layer; map updates now replace only the driver marker layer.
+- [x] Driver movement uses CSS transforms, removing the per-frame React `requestAnimationFrame` loop and limiting animation work to the moving cars.
+- [x] Live mode still uses `/api/openf1/location` and retains the existing Low Data, lifecycle, cursor and stale-data behavior.
+- [x] Verification after the optimization: `npm run typecheck`, `npm run lint`, `npm test` — 62 tests passed.
+
+### Sector timing in Race Radar — 24 August 2026
+
+- [x] OpenF1 lap sector durations now cross the schema/mapper/domain boundary as `sector1Seconds`, `sector2Seconds`, and `sector3Seconds`.
+- [x] Added a compact S1/S2/S3 secondary line to leaderboard rows when sector data is available.
+- [x] Added the same sector values to the driver focus card under `LAST LAP SECTORS`.
+- [x] Existing lap polling and replay causality are preserved; no additional provider requests are introduced.
+- [x] Replay visual check at Monza 2025 confirmed sector rows and driver-focus sector card render correctly; rows remain compact at approximately 66px.
+- [x] Verification: `npm run typecheck`, `npm run lint`, `npm test` — 62 tests passed.
+
+### Fastest lap card — 24 August 2026
+
+- [x] Derived the provisional fastest completed lap from the existing `laps` stream, excluding invalid and pit-out laps.
+- [x] Added the driver, team, formatted lap time and lap number to the Race Radar timing view.
+- [x] Kept the card visibly provisional during an active session and added an explicit empty state before the first completed lap.
+- [x] Replay uses the same causal calculation, so a fastest lap is not visible before its source lap is available.
+- [x] No additional OpenF1 requests were introduced.
+- [x] Verification: `npm run typecheck`, `npm run lint`, `npm test` — 63 tests passed.
+
+### Replay cache invalidation — 24 August 2026
+
+- [x] Bumped the PWA cache version and excluded `/replay` plus `/api/replay/*` from Service Worker caching.
+- [x] Added `no-store` headers to the fixture-list API and to the client fetch, preventing stale fixture labels after a normal refresh.
+- [x] Automated verification: `npm run typecheck`, `npm run lint`, `npm test` (63 tests), and `npm run build` pass.
+- [ ] Verify once in Chrome after the new Service Worker activates; the first refresh may still need to replace the previously installed worker.
+
+### Fastest lap final status — 24 August 2026
+
+- [x] Fastest lap remains `Provisional` while the session is active and changes to `Official` when the composed lifecycle reaches `ENDED`.
+- [x] Added component coverage for the final-session label.
+
+### Driver personal best lap — 24 August 2026
+
+- [x] Added the personal best lap number alongside the existing personal best time in the driver focus card only.
+- [x] Personal best calculation excludes invalid, empty, and pit-out laps and preserves the lap associated with the best duration.
+- [x] The card shows `Provisional` during the session and `Official` after lifecycle `ENDED`; leaderboard density is unchanged.
+- [x] Verification: `npm run typecheck`, `npm run lint`, `npm test` — 65 tests passed.
+
+### Home visual refresh — 24 August 2026
+
+- [x] Added the supplied cockpit background and F1 asset using Next.js optimized images.
+- [x] Added a high-contrast live-session pill, layered overlays, and a lower hero CTA composition based on `public/schetch_home.png`.
+- [x] Preserved the production-safe Radar CTA and development-only Historical Replay CTA.
+- [ ] Verify the final crop at the target iPhone viewport and at desktop width.
+
+### Dynamic home event card — 24 August 2026
+
+- [x] Added a server-side OpenF1 sessions endpoint with no-store responses.
+- [x] Home now selects the live session first, otherwise the next upcoming session, using the OpenF1 labels and dates.
+- [x] The event pill changes red/green according to upcoming/live/ended state and refreshes on a bounded schedule.
+- [x] Added schedule-state unit coverage.
+- [x] Prevented stale PWA chunks from breaking local development by unregistering/clearing the worker in development and bypassing localhost in the worker.
+
+### Racing visual assets — 24 August 2026
+
+- [x] Added normalized driver/team asset mapping with graceful fallbacks.
+- [x] Added compact team logos to leaderboard rows without changing the timing hierarchy.
+- [x] Added driver portrait and team logo to Driver Focus; added 2026 car art only for 2026 live sessions, avoiding incorrect 2025 replay car art.
+- [x] Added a small driver portrait and team logo to Fastest Lap; Track Map markers remain text/color based for performance and clarity.
+- [x] Personal best display uses the shared racing format `m:ss.mmm`, e.g. `1:23.974`.
+- [x] Last lap in the driver focus card now uses the same `m:ss.mmm` format.
+- [x] Favourite driver selection is now a toggle: clicking the active favourite again clears it from timing, map, and local storage.

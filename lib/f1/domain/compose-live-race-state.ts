@@ -74,10 +74,13 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
   const positions = latestByDriver(input.positions);
   const intervals = latestByDriver(input.intervals);
   const laps = latestByDriver(input.laps);
-  const lapTimes = new Map<number, number>();
+  const bestLaps = new Map<number, LiveLap>();
   for (const lap of input.laps) {
-    if (lap.durationSeconds !== null && (!lapTimes.has(lap.driverNumber) || lap.durationSeconds < lapTimes.get(lap.driverNumber)!)) lapTimes.set(lap.driverNumber, lap.durationSeconds);
+    if (lap.durationSeconds === null || lap.durationSeconds <= 0 || lap.isPitOutLap === true) continue;
+    const current = bestLaps.get(lap.driverNumber);
+    if (!current || lap.durationSeconds < current.durationSeconds!) bestLaps.set(lap.driverNumber, lap);
   }
+  const fastestLap = [...bestLaps.values()].sort((a, b) => a.durationSeconds! - b.durationSeconds!)[0];
   const stints = latestStintByDriver(input.stints);
   const pitStops = pitStopsByDriver(input.pitStops);
   const pitDataAvailable = input.streams.pit.status !== "unavailable" || input.pitStops.length > 0;
@@ -87,11 +90,12 @@ export function composeLiveRaceState(input: LiveRaceInputs, now = Date.now()): L
     const lap = laps.get(driver.number);
     const stint = stints.get(driver.number);
     const tyreAge = stint && lap ? Math.max(stint.tyreAgeAtStart, stint.tyreAgeAtStart + lap.lapNumber - stint.lapStart) : null;
-    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, lastLapSeconds: lap?.durationSeconds ?? null, bestLapSeconds: lapTimes.get(driver.number) ?? null, inPit: null, retired: null, pitStops: pitDataAvailable ? pitStops.get(driver.number) ?? 0 : null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
+    const bestLap = bestLaps.get(driver.number);
+    return { driver, position: position?.position ?? null, gapToLeader: interval?.gapToLeader ?? null, interval: interval?.interval ?? null, compound: stint?.compound ?? null, tyreAge, lastLapSeconds: lap?.durationSeconds ?? null, sector1Seconds: lap?.sector1Seconds ?? null, sector2Seconds: lap?.sector2Seconds ?? null, sector3Seconds: lap?.sector3Seconds ?? null, bestLapSeconds: bestLap?.durationSeconds ?? null, bestLapNumber: bestLap?.lapNumber ?? null, inPit: null, retired: null, pitStops: pitDataAvailable ? pitStops.get(driver.number) ?? 0 : null, sourceTimestamp: position?.sourceTimestamp ?? interval?.sourceTimestamp ?? lap?.sourceTimestamp ?? null };
   }).sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
   const sourceTimestamp = [input.streams.position.sourceTimestamp, input.streams.intervals.sourceTimestamp, input.streams.raceControl.sourceTimestamp, input.streams.laps.sourceTimestamp, input.streams.pit.sourceTimestamp].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   const events = deduplicateRaceControl(input.raceControl);
   const currentRaceStatus = raceStatus(events);
   const lifecycle = sessionLifecycleFor({ session: input.session, raceStatus: currentRaceStatus, raceControl: events, now });
-  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: currentRaceStatus, timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now, lifecycle), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt, lifecycle, polling: pollingPolicyFor(lifecycle) };
+  return { session: input.session, lapNumber: input.laps.reduce((maximum, lap) => Math.max(maximum, lap.lapNumber), 0) || null, totalLaps: null, raceStatus: currentRaceStatus, fastestLap: fastestLap && fastestLap.durationSeconds !== null ? { driverNumber: fastestLap.driverNumber, lapNumber: fastestLap.lapNumber, durationSeconds: fastestLap.durationSeconds, sourceTimestamp: fastestLap.sourceTimestamp } : null, timing, raceControl: events, freshness: calculateFreshness(sourceTimestamp, input.receivedAt, now, lifecycle), streams: input.streams, rateBudget: input.rateBudget, updatedAt: input.receivedAt, lifecycle, polling: pollingPolicyFor(lifecycle) };
 }
